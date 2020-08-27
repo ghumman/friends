@@ -1,0 +1,14 @@
+User: 
+	FirstName
+	LastName
+	Email
+	Password
+	AuthenticationType
+
+Message: 
+	MessageText
+	From
+	To
+	TimeStamp
+
+		

@@ -1,0 +1,41 @@
+Authentication: 
+
+	Create User
+		create-user: 
+			firstName
+			lastName
+			password
+			email
+			authType
+
+	Modify User
+		change-password
+			email
+	
+	Forgot Password
+		forgot-password
+			email
+
+	Authenticate Email
+		email-auth
+			link
+			
+	Delete User
+		delete-user
+			email
+			password
+
+Message: 
+
+	Send Message
+		send-message
+			from
+			to
+			messageText
+
+	Receive Message
+		receive-message
+			from
+			to
+			messageText
+
