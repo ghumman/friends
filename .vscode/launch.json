@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-MessageApplication<message>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "mainClass": "com.friends.message.MessageApplication",
+            "projectName": "message",
+            "args": ""
+        }
+    ]
+}
