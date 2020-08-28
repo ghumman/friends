@@ -8,9 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -18,7 +15,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RestController
 public class UserController {
 
+    public enum AuthType {regular, special};
+
     private UserResponse userResponse; 
+
     @Autowired 
     private UserRepository userRepository;
 
@@ -27,27 +27,81 @@ public class UserController {
         @RequestParam String firstName, 
         @RequestParam String lastName,
         @RequestParam String email, 
-        @RequestParam String password, 
-        @RequestParam String authType
+        String password, 
+        @RequestParam String authType, 
+        String token
     ) {
 
-
-        User newUser = new User(); 
-        newUser.setFirstName(firstName);
-        newUser.setLastName(lastName);
-        newUser.setEmail(email);
-        newUser.setPassword(password);
-        newUser.setAuthType(authType);
-
-
-        userRepository.save(newUser); 
-
         userResponse = new UserResponse(); 
-        userResponse.setMessage("User Created");
-        userResponse.setStatus(200);
-        userResponse.setError(null);
-        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
-        return ResponseEntity.ok(userResponse);
+        userResponse.setMessage("");
+        userResponse.setError(false);
+
+        // validation
+        if (firstName.equals("")) {
+            userResponse.setError(true);
+            userResponse.setMessage("First Name can not be empty. ");
+        } 
+
+        if (lastName.equals("")) {
+            userResponse.setError(true);
+            String temp = userResponse.getMessage(); 
+            userResponse.setMessage(temp + "Last Name can not be empty. ");
+        } 
+
+        if (email.equals("")) {
+            userResponse.setError(true);
+            String temp = userResponse.getMessage(); 
+            userResponse.setMessage(temp + "Email can not be empty. ");
+        } 
+
+        if (!authType.equals(AuthType.regular.toString()) && !authType.equals(AuthType.special.toString())) {
+            userResponse.setError(true);
+            String temp = userResponse.getMessage(); 
+            userResponse.setMessage(temp + "Authentication can only be regular or special. ");
+        }
+
+        if (authType.equals(AuthType.regular.toString()) && password.equals("")) {
+            userResponse.setError(true);
+            String temp = userResponse.getMessage(); 
+            userResponse.setMessage(temp + "Password can not be empty. ");
+        }
+
+        if (authType.equals(AuthType.special.toString()) && token.equals("")) {
+            userResponse.setError(true);
+            String temp = userResponse.getMessage(); 
+            userResponse.setMessage(temp + "Token can not be empty. ");
+        }
+
+        if (userResponse.getError()) {
+            userResponse.setStatus(400);
+            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            return ResponseEntity.ok(userResponse);
+        }
+
+        // input is valid 
+
+        if (userRepository.findByEmail(email) == null) {
+
+            User newUser = new User(firstName, lastName, email, password, authType, token); 
+            userRepository.save(newUser); 
+
+            userResponse.setMessage("User Created");
+            userResponse.setStatus(200);
+            userResponse.setError(false);
+            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            return ResponseEntity.ok(userResponse);
+        }
+
+        else {
+            userResponse.setMessage("User Already Exists");
+            userResponse.setStatus(400);
+            userResponse.setError(true);
+            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            return ResponseEntity.ok(userResponse);
+        }
+
+ 
+
     }
 
     @GetMapping(path="/all")

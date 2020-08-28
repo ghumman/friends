@@ -8,6 +8,6 @@ import lombok.Data;
 public class UserResponse {
     private Timestamp time; 
     private int status;
-    private String error; 
+    private Boolean error; 
     private String message; 
 }
