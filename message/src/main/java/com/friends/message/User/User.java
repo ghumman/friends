@@ -1,5 +1,9 @@
 package com.friends.message.User;
 
+
+import java.sql.Timestamp;
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -8,7 +12,7 @@ import javax.persistence.Id;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 
-// import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 
 import lombok.Data;
 
@@ -27,6 +31,9 @@ public class User {
     @NotNull
     private String lastName; 
 
+    @NotNull
+    private Timestamp createdAt;
+
     private String salt;
     private String password; 
     private String token; 
@@ -44,25 +51,22 @@ public class User {
     User(String fName, String lName, String newEmail , String pwd, String auth, String tkn) {
 
         if (auth.equals(AuthType.regular.toString())) {
-            firstName = fName; 
-            lastName = lName; 
-
             salt = PasswordUtils.getSalt(30);
             password = PasswordUtils.generateSecurePassword(pwd, salt);
-
-            email = newEmail; 
             authType = AuthType.regular; 
         } else if (auth.equals(AuthType.special.toString())) {
-            firstName = fName; 
-            lastName = lName; 
             token = tkn; 
-            email = newEmail; 
             authType = AuthType.special; 
         }
+
+        firstName = fName; 
+        lastName = lName; 
+        email = newEmail; 
+        Date date = new Date();
+        createdAt = new Timestamp(date.getTime()); 
+
     }
 
-    User() {
-        
-    }
+    User() {}
 
 }
