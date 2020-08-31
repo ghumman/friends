@@ -284,6 +284,90 @@ public class UserController {
         }
     }
 
+    @PostMapping("/change-password")
+    public ResponseEntity<UserResponse> changePassword(
+        @RequestParam String email, 
+        String password, 
+        String newPassword,
+        @RequestParam String authType
+    ) {
+
+        try {
+
+            userResponse = new UserResponse(); 
+
+            User currentUser = userRepository.findByEmail(email);
+
+            if (currentUser == null) {
+
+                userResponse.setMessage("User Does Not Exist");
+                userResponse.setStatus(400);
+                userResponse.setError(true);
+                userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                return ResponseEntity.ok(userResponse);
+            }
+
+            else {
+
+                if (authType.equals(AuthType.special.toString())) {
+
+                    userResponse.setMessage("Logged in using OAuth");
+                    userResponse.setStatus(400);
+                    userResponse.setError(true);
+                    userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    return ResponseEntity.ok(userResponse);
+                } 
+
+                else if (authType.equals(AuthType.regular.toString())) {
+
+                    String salt = currentUser.getSalt(); 
+                    String securedPassword = currentUser.getPassword(); 
+                    boolean passwordMatch = PasswordUtils.verifyUserPassword(password, securedPassword, salt);
+            
+                    if(passwordMatch) 
+                    {
+                        String newSalt = PasswordUtils.getSalt(30);
+                        String newPwd = PasswordUtils.generateSecurePassword(newPassword, newSalt);
+
+                        currentUser.setSalt(newSalt); 
+                        currentUser.setPassword(newPwd);
+
+                        userRepository.save(currentUser);
+
+                        userResponse.setMessage("Password changed");
+                        userResponse.setStatus(200);
+                        userResponse.setError(false);
+                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        return ResponseEntity.ok(userResponse);
+                    } else {
+                        userResponse.setMessage("Original password not right");
+                        userResponse.setStatus(400);
+                        userResponse.setError(true);
+                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        return ResponseEntity.ok(userResponse);
+                    }
+            
+                } 
+
+                else {
+                    userResponse.setMessage("Authentication Type not right");
+                    userResponse.setStatus(400);
+                    userResponse.setError(true);
+                    userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    return ResponseEntity.ok(userResponse);
+                }
+
+            }
+        } catch(Exception e) {
+            userResponse = new UserResponse(); 
+            userResponse.setMessage(e.toString());
+            userResponse.setStatus(400);
+            userResponse.setError(true);
+            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            return ResponseEntity.ok(userResponse);
+        }
+    }
+
 
     @GetMapping(path="/all")
     public @ResponseBody Iterable<User> getAllUsers() {
