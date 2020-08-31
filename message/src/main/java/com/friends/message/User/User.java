@@ -8,6 +8,7 @@ import javax.persistence.Id;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 
+// import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import lombok.Data;
 
@@ -26,6 +27,7 @@ public class User {
     @NotNull
     private String lastName; 
 
+    private String salt;
     private String password; 
     private String token; 
     
@@ -42,7 +44,17 @@ public class User {
         if (auth.equals(AuthType.regular.toString())) {
             firstName = fName; 
             lastName = lName; 
-            password = pwd; 
+            
+            // password setup
+            // BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12); // Strength set as 12
+            // password = encoder.encode(pwd); 
+
+
+            // password = pwd; 
+
+            salt = PasswordUtils.getSalt(30);
+            password = PasswordUtils.generateSecurePassword(pwd, salt);
+
             email = newEmail; 
             authType = AuthType.regular; 
         } else if (auth.equals(AuthType.special.toString())) {

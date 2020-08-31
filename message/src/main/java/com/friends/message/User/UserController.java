@@ -99,9 +99,91 @@ public class UserController {
             userResponse.setTime(new Timestamp(System.currentTimeMillis()));
             return ResponseEntity.ok(userResponse);
         }
+    }
 
- 
+    @PostMapping("/login")
+    public ResponseEntity<UserResponse> login(
+        @RequestParam String email, 
+        String password, 
+        @RequestParam String authType, 
+        String token
+    ) {
 
+        try {
+
+        userResponse = new UserResponse(); 
+
+        User currentUser = userRepository.findByEmail(email);
+
+        if (currentUser == null) {
+
+            userResponse.setMessage("User Does Not Exist");
+            userResponse.setStatus(400);
+            userResponse.setError(true);
+            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            return ResponseEntity.ok(userResponse);
+        }
+
+        else {
+
+            if (authType.equals(AuthType.regular.toString())) {
+
+                String salt = currentUser.getSalt(); 
+                String securedPassword = currentUser.getPassword(); 
+                boolean passwordMatch = PasswordUtils.verifyUserPassword(password, securedPassword, salt);
+        
+                if(passwordMatch) 
+                {
+                    userResponse.setMessage("Logged In");
+                    userResponse.setStatus(200);
+                    userResponse.setError(false);
+                    userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    return ResponseEntity.ok(userResponse);
+                } else {
+                    userResponse.setMessage("Login Failed");
+                    userResponse.setStatus(400);
+                    userResponse.setError(true);
+                    userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    return ResponseEntity.ok(userResponse);
+                }
+        
+            } else if (authType.equals(AuthType.special.toString())) {
+                // login using OAuth
+                boolean passwordMatch = token.equals(currentUser.getToken());
+        
+                if(passwordMatch) 
+                {
+                    userResponse.setMessage("Logged In");
+                    userResponse.setStatus(200);
+                    userResponse.setError(false);
+                    userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    return ResponseEntity.ok(userResponse);
+                } else {
+                    userResponse.setMessage("Login Failed");
+                    userResponse.setStatus(400);
+                    userResponse.setError(true);
+                    userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    return ResponseEntity.ok(userResponse);
+                }
+            } else {
+                userResponse.setMessage("Authentication Type not right");
+                userResponse.setStatus(400);
+                userResponse.setError(true);
+                userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                return ResponseEntity.ok(userResponse);
+            }
+
+        }
+    } catch(Exception e) {
+        userResponse = new UserResponse(); 
+        userResponse.setMessage(e.toString());
+        userResponse.setStatus(400);
+        userResponse.setError(true);
+        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+        return ResponseEntity.ok(userResponse);
+    }
+        
+       
     }
 
     @GetMapping(path="/all")
