@@ -3,6 +3,10 @@ package com.friends.message.User;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.sql.Timestamp;
+import java.util.Optional;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -367,6 +371,77 @@ public class UserController {
             return ResponseEntity.ok(userResponse);
         }
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<UserResponse> forgotPassword(
+        @RequestParam String email, 
+        HttpServletRequest request
+    ) {
+        User currentUser = userRepository.findByEmail(email); 
+
+        if (currentUser == null || currentUser.getAuthType() == User.AuthType.special) {
+            userResponse.setMessage("No account or logged in using social media");
+            userResponse.setStatus(400);
+            userResponse.setError(true);
+            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            return ResponseEntity.ok(userResponse);
+        } else {
+            currentUser.setResetToken(UUID.randomUUID().toString());
+            userRepository.save(currentUser); 
+
+			String appUrl = request.getScheme() + "://" + request.getServerName();
+			
+			// Email message
+			SimpleMailMessage passwordResetEmail = new SimpleMailMessage();
+			passwordResetEmail.setFrom("support@demo.com");
+			passwordResetEmail.setTo(currentUser.getEmail());
+			passwordResetEmail.setSubject("Password Reset Request");
+			passwordResetEmail.setText("To reset your password, click the link below:\n" + appUrl
+					+ "/reset?token=" + currentUser.getResetToken());
+			
+            emailSender.send(passwordResetEmail);
+            
+            userResponse.setMessage("Reset password is sent");
+            userResponse.setStatus(200);
+            userResponse.setError(false);
+            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            return ResponseEntity.ok(userResponse);
+
+        }
+
+    }
+
+    @PostMapping(path="/reset-password")
+    public ResponseEntity<UserResponse> resetPassword(
+        @RequestParam String token,
+        @RequestParam String password
+    ) {
+        Optional<User> currentUserOpt = userRepository.findByResetToken(token);
+        User currentUser = currentUserOpt.get(); 
+
+		if (currentUser == null) {
+            userResponse.setMessage("Token is not valid");
+            userResponse.setStatus(400);
+            userResponse.setError(true);
+            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            return ResponseEntity.ok(userResponse);
+        } else {
+            String salt = PasswordUtils.getSalt(30);
+            String newPassword = PasswordUtils.generateSecurePassword(password, salt);
+
+            currentUser.setSalt(salt);
+            currentUser.setPassword(newPassword);
+
+            userRepository.save(currentUser); 
+
+            userResponse.setMessage("Password successfully reset");
+            userResponse.setStatus(200);
+            userResponse.setError(false);
+            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            return ResponseEntity.ok(userResponse);
+        }
+    }
+
 
 
     @GetMapping(path="/all")

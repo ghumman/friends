@@ -30,6 +30,8 @@ public class User {
     private String salt;
     private String password; 
     private String token; 
+
+    private String resetToken; 
     
     @Column(unique = true) 
     @NotNull
