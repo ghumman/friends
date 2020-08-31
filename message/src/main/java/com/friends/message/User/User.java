@@ -44,13 +44,6 @@ public class User {
         if (auth.equals(AuthType.regular.toString())) {
             firstName = fName; 
             lastName = lName; 
-            
-            // password setup
-            // BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12); // Strength set as 12
-            // password = encoder.encode(pwd); 
-
-
-            // password = pwd; 
 
             salt = PasswordUtils.getSalt(30);
             password = PasswordUtils.generateSecurePassword(pwd, salt);

@@ -6,6 +6,8 @@ import java.sql.Timestamp;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +23,9 @@ public class UserController {
 
     @Autowired 
     private UserRepository userRepository;
+
+    @Autowired
+    private JavaMailSender emailSender;
 
     @PostMapping("/add-user")
     public ResponseEntity<UserResponse> addUser(
@@ -84,6 +89,14 @@ public class UserController {
 
             User newUser = new User(firstName, lastName, email, password, authType, token); 
             userRepository.save(newUser); 
+
+            // send confirmation email
+            SimpleMailMessage message = new SimpleMailMessage(); 
+            message.setFrom("server-email@gmail.com");
+            message.setTo(email); 
+            message.setSubject("Welcome to Friends"); 
+            message.setText("New Account Created");
+            emailSender.send(message);
 
             userResponse.setMessage("User Created");
             userResponse.setStatus(200);
