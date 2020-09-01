@@ -1,6 +1,7 @@
 package com.friends.message.Message;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 import lombok.Data;
 
@@ -10,4 +11,5 @@ public class MessageResponse {
     private int status;
     private Boolean error; 
     private String message; 
+    private List<MessagesAll> msgs; 
 }
