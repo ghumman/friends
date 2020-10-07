@@ -22,3 +22,16 @@ https://myaccount.google.com/lesssecureapps
 ```
 <java.version>14</java.version>
 ```
+
+### Notes
+- In order go get 200 response when calling endpoints like add-user and others you need to provide gmail or other email provider username and password in application.properties file. Otherwise you'll be getting Internal Server Error as endpoints try to send emails to newly created user emails. 
+
+- To check if swagger is working use following url 
+```
+http://localhost:8080/v2/api-docs
+```
+
+- To use swagger ui use following url
+```
+http://localhost:8080/swagger-ui/
+```
