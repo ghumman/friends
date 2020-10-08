@@ -1,3 +1,21 @@
+## Following commands were used to created this project
+```
+npx create-react-app react-js
+cd react-js
+npm start
+```
+
+## Use following command to push the code
+```
+git push friends master:react-js
+```
+
+## Initial push done using following commands
+```
+git remote add react-js git@github.com:ghumman/friends.git
+git push react-js master:react-js
+```
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
