@@ -16,6 +16,13 @@ git remote add react-js git@github.com:ghumman/friends.git
 git push react-js master:react-js
 ```
 
+## Eslint included using following commands
+```
+yarn add eslint --dev
+yarn run eslint --init
+yarn run eslint yourfile.js
+```
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
