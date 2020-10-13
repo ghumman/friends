@@ -7,7 +7,7 @@ npm start
 
 ## Use following command to push the code
 ```
-git push friends master:react-js
+git push react-js master:react-js
 ```
 
 ## Initial push done using following commands
