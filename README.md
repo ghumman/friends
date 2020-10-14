@@ -1,4 +1,4 @@
-## Following commands were used to created this project
+## Following commands were used to create this project
 ```
 npx create-react-app react-js
 cd react-js
@@ -7,6 +7,9 @@ npm start
 
 ## Use following command to push the code
 ```
+If on branch react-js: 
+git push react-js react-js
+If incase on branch master: 
 git push react-js master:react-js
 ```
 

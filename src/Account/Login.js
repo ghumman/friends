@@ -29,27 +29,25 @@ function Login(props) {
   const handleSubmit = (event) => {
     event.preventDefault();
     console.log("Submit button is pressed.");
-    var username = this.state.formUsername;
-    var password = this.state.formPassword;
+    var username = formUsername;
+    var password = formPassword;
 
-    var that = this;
 
     fetch(
-      "https://localhost/login",
+      "http://localhost:8080/login",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"
         },
-        body: "username=" + username.trim() + "&password=" + password.trim()
-      }
-    ).then(async function(data) {
+        body: "email=" + username.trim() + "&password=" + password.trim() + "&authType=regular"
+      }).then(async function(data) {
       data.json().then(async function(data) {
         console.log("Value of data.message:");
         console.log(data.message);
-        if (data.message === "Login successfull") {
+        if (data.message === "Logged In") {
           console.log("Login successfull");
-          that.props.login(that.state.formUsername, that.state.formPassword);
+          props.login(formUsername, formPassword);
 
           /*
             save the username and password in local storage
@@ -59,7 +57,7 @@ function Login(props) {
           localStorage.setItem(USERNAME, username.trim());
           localStorage.setItem(PASSWORD, password.trim());
 
-          that.props.history.push({
+          props.history.push({
             pathname: "/Profile"
           });
         } else {
