@@ -24,7 +24,6 @@ function Profile(props) {
   }, [])
 
   const signMeOut = () => {
-    console.log("Signing Out");
     localStorage.setItem(USERNAME, "");
     localStorage.setItem(PASSWORD, "");
     localStorage.setItem(LOGIN_TYPE, "");
