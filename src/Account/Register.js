@@ -16,7 +16,6 @@ function Register(props) {
 
   const [formFirstName, setFormFirstName] = useState(""); 
   const [formLastName, setFormLastName] = useState(""); 
-  const [formUsername, setFormUsername] = useState(""); 
   const [formPassword, setFormPassword] = useState(""); 
   const [formPassword2, setFormPassword2] = useState(""); 
   const [formEmail, setFormEmail] = useState(""); 
@@ -29,16 +28,8 @@ function Register(props) {
     setFormLastName(event.target.value ); 
   }
 
-  const handleChangeUsername = (event) => {
-    setFormUsername(event.target.value ); 
-    // console.log("event.target.value");
-    // console.log(event.target.value);
-  }
-
   const handleChangeEmail = (event) => {
     setFormEmail(event.target.value ); 
-    // console.log("event.target.value");
-    // console.log(event.target.value);
   }
 
   const handleChangePassword = (event) => {
@@ -51,38 +42,30 @@ function Register(props) {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log("event.target");
-    console.log(event.target.loginFormUsername.value);
     if (
       (formFirstName.trim() === "") |
       (formLastName.trim() === "") |
-      (formUsername.trim() === "") |
       (formEmail.trim() === "") |
       (formPassword.trim() === "") |
       (formPassword2.trim() === "")
     ) {
-      console.log("All fields are required. Please fill   all of them.");
       setErrorMessage("All fields are required. Please fill all of them.")
       return;
     }
 
     if (formPassword.trim() !== formPassword2.trim()) {
-      console.log("Passwords don't match.");
       setErrorMessage("Passwords don't match.");
       return;
     }
-    // console.log(event.loginFormUsername);
 
-    console.log("Submit button is pressed.");
     var firstName = formFirstName;
     var lastName = formLastName;
-    var username = formUsername;
     var email = formEmail;
     var password = formPassword;
 
 
     fetch(
-      "https://localhost/signup",
+      "http://localhost:8080/add-user",
       {
         method: "POST",
         headers: {
@@ -93,32 +76,28 @@ function Register(props) {
           firstName.trim() +
           "&lastName=" +
           lastName.trim() +
-          "&username=" +
-          username.trim() +
           "&email=" +
           email.trim() +
           "&password=" +
-          password.trim()
+          password.trim() +
+          "&authType=regular"
+
       }
     ).then(async function(data) {
       data.json().then(async function(data) {
-        console.log("Value of data.message:");
-        console.log(data.message);
-        if (data.message === "User registered successfully") {
+        if (data.message === "User Created") {
           setErrorMessage(data.message );
-          console.log("User registered successfully");
 
-          localStorage.setItem(USERNAME, username.trim());
+          localStorage.setItem(USERNAME, email.trim());
           localStorage.setItem(PASSWORD, password.trim());
 
-          props.login(formUsername, formPassword);
+          props.login(formEmail, formPassword);
 
           props.history.push({
             pathname: "/Profile"
           });
         } else {
           setErrorMessage( data.message );
-          console.log(data.message);
         }
       });
     });
@@ -140,9 +119,7 @@ function Register(props) {
       props.history.push({
         pathname: "/Profile"
       });
-    } else {
-      // console.log("resultUsername and/or resultPassword is/are empty");
-    }
+    } 
   }, [])
   // componentDidMount() {
     
@@ -192,15 +169,6 @@ function Register(props) {
                 onChange={handleChangeLastName}
               />
             </Form.Group>
-            <Form.Group controlId="loginFormUsername">
-              <Form.Label>Username</Form.Label>
-              <Form.Control
-                type="username"
-                value={formUsername}
-                placeholder="Enter Username"
-                onChange={handleChangeUsername}
-              />
-            </Form.Group>
             <Form.Group controlId="loginFormEmail">
               <Form.Label>Email</Form.Label>
               <Form.Control
@@ -232,7 +200,7 @@ function Register(props) {
             </Form.Group>
 
             <Button variant="primary" type="submit">
-              Sign In
+              Sign Up
             </Button>
             <Link to="/" className="btn btn-link">
               Cancel
