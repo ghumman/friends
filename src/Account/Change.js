@@ -15,7 +15,7 @@ function Login(props) {
 
   const [errorCurrentPassword, setErrorCurrentPassword] = useState("");
   const [errorServerMessage, setErrorServerMessage] = useState("");
-  const [, setGlobalUsername] = useState("");
+  const [globalUsername, setGlobalUsername] = useState("");
   const [globalPassword, setGlobalPassword] = useState("");
   const [formCurrentPassword, setFormCurrentPassword] = useState("");
   const [formPassword, setFormPassword] = useState("");
@@ -37,7 +37,6 @@ function Login(props) {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log("Submit button is pressed.");
     var password = formPassword;
     var password2 = formPassword2;
     var currentPassword = formCurrentPassword;
@@ -48,23 +47,24 @@ function Login(props) {
       if (password.length >= 5 && password === password2) {
 
         fetch(
-          "https://localhost/changePassword",
+          "http://localhost:8080/change-password",
           {
             method: "POST",
             headers: {
               "Content-Type": "application/x-www-form-urlencoded"
             },
             body:
-              "username=" +
-              this.state.globalUsername.trim() +
+              "email=" +
+              globalUsername.trim() +
               "&password=" +
               currentPassword.trim() +
               "&newPassword=" +
-              password.trim()
+              password.trim() +
+              "&authType=regular"
           }
         ).then(async function(data) {
           data.json().then(async function(data) {
-            if (data.message === "Password changed successfully") {
+            if (data.message === "Password changed") {
               setErrorServerMessage("Password changed successfully.");
 
               localStorage.setItem(PASSWORD, password);
@@ -101,7 +101,7 @@ function Login(props) {
   }, [])
 
   const loginPressed = () => {
-    this.props.history.push({
+    props.history.push({
       pathname: "/Profile"
     });
   }
