@@ -28,7 +28,6 @@ function Login(props) {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log("Submit button is pressed.");
     var username = formUsername;
     var password = formPassword;
 
@@ -43,10 +42,7 @@ function Login(props) {
         body: "email=" + username.trim() + "&password=" + password.trim() + "&authType=regular"
       }).then(async function(data) {
       data.json().then(async function(data) {
-        console.log("Value of data.message:");
-        console.log(data.message);
         if (data.message === "Logged In") {
-          console.log("Login successfull");
           props.login(formUsername, formPassword);
 
           /*
@@ -61,8 +57,6 @@ function Login(props) {
             pathname: "/Profile"
           });
         } else {
-          console.log(data.message);
-          // that.setState({ errorServerMessage: data.message });
           setErrorServerMessage(data.message);
         }
       });
@@ -74,7 +68,6 @@ function Login(props) {
 
 
   useEffect(()=>{
-    // console.log('component mounted!')
     const resultUsername = localStorage.getItem("username");
     const resultPassword = localStorage.getItem("password");
     if (
