@@ -24,7 +24,7 @@ https://myaccount.google.com/lesssecureapps
 ```
 
 ### Notes
-- In order go get 200 response when calling endpoints like add-user and others you need to provide gmail or other email provider username and password in application.properties file. Otherwise you'll be getting Internal Server Error as endpoints try to send emails to newly created user emails. 
+- In order go get 200 response when calling endpoints like add-user and others you need to provide gmail or other email provider username and password in application.properties file and inside application.properties in JavaMailSender method. Otherwise you'll be getting Internal Server Error as endpoints try to send emails to newly created user emails. 
 
 - To check if swagger is working use following url 
 ```
