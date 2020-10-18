@@ -1,24 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
 
-
 import Button from "react-bootstrap/Button";
-// import ButtonToolbar from "react-bootstrap/ButtonToolbar";
-
 
 import Form from "react-bootstrap/Form";
 
-
-
-
-
-function Login(props) {
+function ResetPassword(props) {
 
   const [errorServerMessage, setErrorServerMessage] = useState(""); 
   const [formPassword, setFormPassword] = useState(""); 
   const [formPassword2, setFormPassword2] = useState(""); 
-  const [selector, setSelector] = useState(""); 
-  const [validator, setValidator] = useState(""); 
+  const [token, setToken] = useState(""); 
   
 
   const handleChangePassword = (event) => {
@@ -31,14 +23,13 @@ function Login(props) {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log("Submit button is pressed.");
     var password = formPassword;
     var password2 = formPassword2;
 
     if (password.length >= 5 && password === password2) {
 
       fetch(
-        "https://localhost/resetPassword",
+        "http://localhost:8080/reset-password",
         {
           method: "POST",
           headers: {
@@ -47,14 +38,12 @@ function Login(props) {
           body:
             "password=" +
             password.trim() +
-            "&selector=" +
-            selector +
-            "&validator=" +
-            validator
+            "&token=" +
+            token
         }
       ).then(async function(data) {
         data.json().then(async function(data) {
-          if (data.message === "Password updated successfully") {
+          if (data.message === "Password successfully reset") {
             setErrorServerMessage("Password updated successfully.")
           } else {
             setErrorServerMessage(data.message)
@@ -66,10 +55,6 @@ function Login(props) {
       setErrorServerMessage("Password should be 5 characters long and match.")
     }
   }
-
-  // in componentDidMount
-  // check if user credentials are already saved,
-  // in that case save it in redux and send him to profile PAGE
 
   useEffect(() => {
 
@@ -91,41 +76,25 @@ function Login(props) {
   }, [])
 
   const parseUrl = () => {
+
     var url = window.location.href;
-    var localSelector, localValidator, localReset;
+    var localToken;
     var regex = /[?&]([^=#]+)=([^&#]*)/g,
       params = {},
       match;
     while ((match = regex.exec(url))) {
       params[match[1]] = match[2];
-      console.log(match[1], match[2]);
-      if (match[1] === "selector") {
-        console.log("match1 is selector");
-        localSelector = match[2];
-        console.log("localSelector");
-        console.log(localSelector);
-      }
-      if (match[1] === "validator") {
-        console.log("match1 is validator");
-        localValidator = match[2];
-        console.log("localValidator");
-        console.log(localValidator);
-      }
-      if (match[1] === "reset") {
-        console.log("match1 is reset");
-        localReset = match[2];
-        console.log("localReset");
-        console.log(localReset);
+      if (match[1] === "token") {
+        localToken = match[2];
       }
     } // while ends
 
+
     if (
-      (localSelector !== "") &
-      (localSelector !== null) &
-      ((localValidator !== "") & (localValidator !== null) & (localReset === "1"))
+      (localToken !== "") &
+      (localToken !== undefined) 
     ) {
-      setSelector(localSelector);
-      setValidator(localValidator);
+      setToken(localToken);
       setErrorServerMessage("Please select new password.");
     } else {
       setErrorServerMessage("Url is tempered")
@@ -137,8 +106,6 @@ function Login(props) {
       pathname: "/"
     });
   }
-
-
 
     var errorMessage;
     if (errorServerMessage !== "") {
@@ -226,5 +193,5 @@ function mapDispatchToProps(dispatch) {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(Login);
+)(ResetPassword);
 
