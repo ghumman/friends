@@ -1,21 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
 
-
-
 import Button from "react-bootstrap/Button";
-// import ButtonToolbar from "react-bootstrap/ButtonToolbar";
-
 
 import Form from "react-bootstrap/Form";
 
-
-
-
-
-// function App() {
-// class Login extends React.Component {
-function Login(props) {
+function Forgot(props) {
 
   const [errorServerMessage, setErrorServerMessage] = useState("");
   const [formEmail, setFormEmail] = useState("");
@@ -26,12 +16,11 @@ function Login(props) {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log("Submit button is pressed.");
     var email = formEmail;
 
 
     fetch(
-      "https://localhost/forgot",
+      "http://localhost:8080/forgot-password",
       {
         method: "POST",
         headers: {
@@ -41,9 +30,7 @@ function Login(props) {
       }
     ).then(async function(data) {
       data.json().then(async function(data) {
-        console.log("Value of data.message:");
-        console.log(data.message);
-        if (data.message === "Password is sent to your email") {
+        if (data.message === "Reset password is sent") {
           setErrorServerMessage("Password reset link is sent to your email.");
         } else {
           setErrorServerMessage(data.message);
@@ -154,4 +141,4 @@ function mapDispatchToProps(dispatch) {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(Login);
+)(Forgot);
