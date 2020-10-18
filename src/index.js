@@ -10,7 +10,6 @@ import Forgot from "./Account/Forgot";
 import ResetPassword from "./Account/ResetPassword";
 import Change from "./Account/Change";
 import Register from "./Account/Register";
-import EmailConfirmation from "./Account/EmailConfirmation";
 import Profile from "./Message/Profile";
 
 import { Provider } from "react-redux";
@@ -50,7 +49,6 @@ const routing = (
       <div>
         <Route exact path="/" component={Login} />
         <Route exact path="/Register" component={Register} />
-        <Route path="/email-confirmation" component={EmailConfirmation} />
         <Route path="/Forgot" component={Forgot} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/Change" component={Change} />
