@@ -4,10 +4,12 @@ import (
 	"crypto/sha1"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -47,7 +49,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := db.Query("SELECT password, salt FROM user where email=?", values.Get("email"))
+	result, err := db.Query("SELECT password, salt, token FROM user where email=?", values.Get("email"))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -57,6 +59,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	var count int = 0
 
 	var login bool = false
+	var loginCredentialsFailed bool = false
 
 	for result.Next() {
 
@@ -64,22 +67,58 @@ func login(w http.ResponseWriter, r *http.Request) {
 			login = false
 			break
 		} else {
-			var tempPassword string
-			var tempSalt string
-			result.Scan(&tempPassword, &tempSalt)
+			var tempPassword, tempSalt, tempToken string
 
-			login = checkCredentials(values.Get("password"), tempSalt, tempPassword)
-			count = count + 1
+			if values.Get("authType") == "regular" {
+
+				result.Scan(&tempPassword, &tempSalt, &tempToken)
+
+				login = checkCredentials(values.Get("password"), tempSalt, tempPassword)
+				if login == false {
+					loginCredentialsFailed = true
+				}
+				count = count + 1
+			} else if values.Get("authType") == "special" {
+				// account is setup using OAuth
+				if values.Get("token") == tempToken {
+					login = true
+				} else {
+					login = false
+					loginCredentialsFailed = true
+				}
+			}
+
 		}
 	}
 
+	resp := UserResponse{}
+
 	if login {
-		fmt.Println("Login successful")
+		resp.Message = "Logged In"
+		resp.Err = false
+		resp.Status = 200
+		resp.Time = time.Now().String()
 	} else {
-		fmt.Println("Login failed")
+
+		if loginCredentialsFailed {
+			resp.Message = "Login Failed"
+		} else {
+			resp.Message = "User Does Not Exist"
+		}
+
+		resp.Err = true
+		resp.Status = 400
+		resp.Time = time.Now().String()
+
+	}
+	js, err := json.Marshal(resp)
+	if err != nil {
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	fmt.Fprintf(w, "New post was created")
+	w.Write(js)
 }
 
 func checkCredentials(password string, databaseSalt string, databasePassword string) bool {
