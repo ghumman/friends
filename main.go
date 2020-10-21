@@ -15,6 +15,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -39,7 +40,7 @@ func main() {
 	router.HandleFunc("/add-user", addUser).Methods("POST")
 	router.HandleFunc("/login", login).Methods("POST")
 	router.HandleFunc("/change-password", changePassword).Methods("POST")
-	// router.HandleFunc("/forgot-password", forgotPassword).Methods("POST")
+	router.HandleFunc("/forgot-password", forgotPassword).Methods("POST")
 	// router.HandleFunc("/reset-password", resetPassword).Methods("POST")
 	// router.HandleFunc("/all-friends", allFriends).Methods("POST")
 
@@ -183,7 +184,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				w.Write(js)
-				sendEmail(values.Get("email"), true)
+				sendEmail(values.Get("email"), true, "")
 
 			} else { // else if creating account using OAuth
 				// now we have newID, salt and hash, and we can creat new user
@@ -204,7 +205,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				w.Write(js)
-				sendEmail(values.Get("email"), true)
+				sendEmail(values.Get("email"), true, "")
 			} // else if creating account using OAuth ends
 		} // create new user ends
 	} // The request is valid and required data is present ends
@@ -323,18 +324,31 @@ func createHash(password string, databaseSalt string) string {
 	return base64.StdEncoding.EncodeToString(hbts)
 }
 
-func sendEmail(toEmail string, accountCreated bool) {
+func sendEmail(toEmail string, accountCreated bool, token string) {
+
+	// Choose auth method and set it up
+	auth := smtp.PlainAuth("", "your-email.com", "your-email-password", "smtp.gmail.com")
+
+	// Here we do it all: connect to our server, set up a message and send it
+	to := []string{toEmail}
 
 	if accountCreated {
-		// Choose auth method and set it up
-		auth := smtp.PlainAuth("", "your-email.com", "your-email-password", "smtp.gmail.com")
 
-		// Here we do it all: connect to our server, set up a message and send it
-		to := []string{toEmail}
 		msg := []byte("To: " + toEmail + "\r\n" +
 			"Subject: Welcome to Friends\r\n" +
 			"\r\n" +
 			"New Account Created\r\n")
+		err := smtp.SendMail("smtp.gmail.com:587", auth, "your-email.com", to, msg)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		msg := []byte("To: " + toEmail + "\r\n" +
+			"Subject: Password Reset Request\r\n" +
+			"\r\n" +
+			"To reset your password, click the link below:\n" +
+			"http://localhost:3000/#/reset-password?token=" + token +
+			"\r\n")
 		err := smtp.SendMail("smtp.gmail.com:587", auth, "your-email.com", to, msg)
 		if err != nil {
 			log.Fatal(err)
@@ -443,6 +457,94 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		w.Write(js)
+	}
+}
+
+
+func forgotPassword(w http.ResponseWriter, r *http.Request) {
+
+	body, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	values, errParse := url.ParseQuery(string(body))
+	if errParse != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := UserResponse{}
+	var tempAuthType, tempID int64
+
+	if values.Get("email") == "" {
+		resp.Message = "Email is required"
+		resp.Err = true
+		resp.Status = 400
+		resp.Time = time.Now().String()
+
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(js)
+		return
+	} else {
+		result, err := db.Query("SELECT id, auth_type FROM user where email=?", values.Get("email"))
+		if err != nil {
+			panic(err.Error())
+		}
+
+		defer result.Close()
+
+		var count int = 0
+
+		for result.Next() {
+
+			result.Scan(&tempID, &tempAuthType)
+			count = count + 1
+		}
+
+		if count == 0 || tempAuthType == 1 {
+			resp.Message = "No account or logged in using social media"
+			resp.Err = true
+			resp.Status = 400
+		} else if count == 1 {
+
+			// b := make([]byte, 16)
+			// _, err := rand.Read(b)
+			// if err != nil {
+			// 	log.Fatal(err)
+			// }
+			// uuid := fmt.Sprintf("%x-%x-%x-%x-%x",
+			// 	b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+			// fmt.Println(uuid)
+
+			uuid := uuid.New()
+
+			updateUserQuery, err := db.Query("UPDATE `user` SET reset_token=? where id=?", uuid.String(), tempID)
+			if err != nil {
+				panic(err.Error())
+			}
+			defer updateUserQuery.Close()
+
+			// send email
+			sendEmail(values.Get("email"), false, uuid.String())
+			resp.Message = "Reset password is sent"
+			resp.Err = false
+			resp.Status = 200
+		}
+
+		resp.Time = time.Now().String()
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		w.Write(js)
 	}
 }
