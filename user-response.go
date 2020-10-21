@@ -1,5 +1,6 @@
 package main
 
+// UserResponse ...
 type UserResponse struct {
 	Time    string     `json:"time"`
 	Status  int        `json:"status"`

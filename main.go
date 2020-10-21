@@ -38,7 +38,7 @@ func main() {
 
 	router.HandleFunc("/add-user", addUser).Methods("POST")
 	router.HandleFunc("/login", login).Methods("POST")
-	// router.HandleFunc("/change-password", changePassword).Methods("POST")
+	router.HandleFunc("/change-password", changePassword).Methods("POST")
 	// router.HandleFunc("/forgot-password", forgotPassword).Methods("POST")
 	// router.HandleFunc("/reset-password", resetPassword).Methods("POST")
 	// router.HandleFunc("/all-friends", allFriends).Methods("POST")
@@ -158,7 +158,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 				newID = lastID + 1
 			}
 
-			// create salt
+			// create new salt and new hash
 			salt := createSalt()
 			hash := createHash(values.Get("password"), salt)
 
@@ -305,9 +305,12 @@ func checkCredentials(password string, databaseSalt string, databasePassword str
 
 func createSalt() string {
 
+	var seededRand *rand.Rand = rand.New(
+		rand.NewSource(time.Now().UnixNano()))
+
 	var ret string
 	for i := 0; i < saltLength; i++ {
-		str := ALPHABET[rand.Intn(len(ALPHABET)-1)]
+		str := ALPHABET[seededRand.Intn(len(ALPHABET)-1)]
 		ret += string(str)
 	}
 
@@ -336,5 +339,110 @@ func sendEmail(toEmail string, accountCreated bool) {
 		if err != nil {
 			log.Fatal(err)
 		}
+	}
+}
+
+func changePassword(w http.ResponseWriter, r *http.Request) {
+
+	body, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	values, errParse := url.ParseQuery(string(body))
+	if errParse != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := UserResponse{}
+	var tempPassword, tempSalt, tempToken sql.NullString
+	var tempID sql.NullInt64
+
+	if values.Get("authType") == "special" {
+		resp.Message = "Logged in using OAuth"
+		resp.Err = true
+		resp.Status = 400
+		resp.Time = time.Now().String()
+
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(js)
+	} else if values.Get("authType") == "regular" {
+		result, err := db.Query("SELECT id, password, salt, token FROM user where email=?", values.Get("email"))
+		if err != nil {
+			panic(err.Error())
+		}
+
+		defer result.Close()
+
+		var count int = 0
+
+		var login bool = false
+
+		for result.Next() {
+
+			if count > 1 {
+				login = false
+				break
+			} else {
+
+				result.Scan(&tempID, &tempPassword, &tempSalt, &tempToken)
+
+				login = checkCredentials(values.Get("password"), tempSalt.String, tempPassword.String)
+				count = count + 1
+
+			}
+		}
+
+		if count == 0 {
+			resp.Message = "User Does Not Exist"
+			resp.Err = true
+			resp.Status = 400
+		} else if login {
+
+			// create new salt and new hash
+			salt := createSalt()
+			hash := createHash(values.Get("newPassword"), salt)
+
+			updateUserQuery, err := db.Query("UPDATE `user` SET salt=?, password=? where id=?", salt, hash, tempID)
+			if err != nil {
+				panic(err.Error())
+			}
+			defer updateUserQuery.Close()
+
+			resp.Message = "Password changed"
+			resp.Err = false
+			resp.Status = 200
+		} else {
+			resp.Message = "Original password not right"
+			resp.Err = true
+			resp.Status = 400
+		}
+
+		resp.Time = time.Now().String()
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Write(js)
+	} else {
+		resp.Message = "Authentication Type not right"
+		resp.Err = true
+		resp.Status = 400
+		resp.Time = time.Now().String()
+
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(js)
 	}
 }
