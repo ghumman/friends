@@ -41,8 +41,11 @@ func main() {
 	router.HandleFunc("/login", login).Methods("POST")
 	router.HandleFunc("/change-password", changePassword).Methods("POST")
 	router.HandleFunc("/forgot-password", forgotPassword).Methods("POST")
-	// router.HandleFunc("/reset-password", resetPassword).Methods("POST")
-	// router.HandleFunc("/all-friends", allFriends).Methods("POST")
+	router.HandleFunc("/reset-password", resetPassword).Methods("POST")
+	router.HandleFunc("/all-friends", allFriends).Methods("POST")
+
+	router.HandleFunc("/send-message", sendMessage).Methods("POST")
+	router.HandleFunc("/messages-user-and-friend", messagesUserAndFriend).Methods("POST")
 
 	http.ListenAndServe(":8000", router)
 
@@ -461,7 +464,6 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func forgotPassword(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -514,15 +516,6 @@ func forgotPassword(w http.ResponseWriter, r *http.Request) {
 			resp.Status = 400
 		} else if count == 1 {
 
-			// b := make([]byte, 16)
-			// _, err := rand.Read(b)
-			// if err != nil {
-			// 	log.Fatal(err)
-			// }
-			// uuid := fmt.Sprintf("%x-%x-%x-%x-%x",
-			// 	b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
-			// fmt.Println(uuid)
-
 			uuid := uuid.New()
 
 			updateUserQuery, err := db.Query("UPDATE `user` SET reset_token=? where id=?", uuid.String(), tempID)
@@ -546,5 +539,506 @@ func forgotPassword(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Write(js)
+	}
+}
+
+func resetPassword(w http.ResponseWriter, r *http.Request) {
+
+	body, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	values, errParse := url.ParseQuery(string(body))
+	if errParse != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := UserResponse{}
+
+	var tempID sql.NullInt64
+
+	// Test if the user already exists
+	result, err := db.Query("SELECT id FROM user where reset_token=?", values.Get("token"))
+	if err != nil {
+		panic(err.Error())
+	}
+	defer result.Close()
+	var count int = 0
+	for result.Next() {
+		result.Scan(&tempID)
+		count = count + 1
+	}
+	if count == 0 { // user already exists
+		resp.Message = "Token is not valid"
+		resp.Status = 400
+		resp.Err = true
+		resp.Time = time.Now().String()
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(js)
+		return
+	} else if count == 1 { // update password
+
+		salt := createSalt()
+		hash := createHash(values.Get("password"), salt)
+
+		updateUserQuery, err := db.Query("UPDATE `user` SET salt=?, password=?, reset_token=? where id=?", salt, hash, nil, tempID)
+		if err != nil {
+			panic(err.Error())
+		}
+		defer updateUserQuery.Close()
+
+		resp.Message = "Password successfully reset"
+		resp.Status = 200
+		resp.Err = false
+		resp.Time = time.Now().String()
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(js)
+	} else {
+		resp.Message = "Multiple users found against this reset token"
+		resp.Status = 400
+		resp.Err = true
+		resp.Time = time.Now().String()
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(js)
+	}
+}
+
+func allFriends(w http.ResponseWriter, r *http.Request) {
+
+	body, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	values, errParse := url.ParseQuery(string(body))
+	if errParse != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	result, err := db.Query("SELECT password, salt, token FROM user where email=?", values.Get("email"))
+	if err != nil {
+		panic(err.Error())
+	}
+
+	defer result.Close()
+
+	var count int = 0
+
+	var login bool = false
+	var loginCredentialsFailed bool = false
+	var tempPassword, tempSalt, tempToken sql.NullString
+
+	resp := UserResponse{}
+
+	for result.Next() {
+
+		if count > 1 {
+			login = false
+			break
+		} else {
+
+			result.Scan(&tempPassword, &tempSalt, &tempToken)
+
+			if values.Get("authType") == "regular" {
+
+				login = checkCredentials(values.Get("password"), tempSalt.String, tempPassword.String)
+				if login == false {
+					loginCredentialsFailed = true
+				} else {
+					resultFriends, err := db.Query("SELECT first_name, last_name, email FROM user where email!=?", values.Get("email"))
+					if err != nil {
+						panic(err.Error())
+					}
+
+					defer resultFriends.Close()
+
+					var tempFirstName, tempLastName, tempEmail sql.NullString
+
+					for resultFriends.Next() {
+
+						resultFriends.Scan(&tempFirstName, &tempLastName, &tempEmail)
+
+						userData := UsersAll{
+							tempFirstName.String,
+							tempLastName.String,
+							tempEmail.String,
+						}
+						resp.Users = append(resp.Users, userData)
+					}
+				}
+				count = count + 1
+			} else if values.Get("authType") == "special" {
+				// account is setup using OAuth
+				if values.Get("token") == tempToken.String {
+					login = true
+
+				} else {
+					login = false
+					loginCredentialsFailed = true
+				}
+			}
+		}
+	}
+
+	if login {
+		resp.Message = "Friends attached"
+		resp.Err = false
+		resp.Status = 200
+		resp.Time = time.Now().String()
+	} else {
+
+		if loginCredentialsFailed {
+			resp.Message = "Login Failed"
+		} else {
+			resp.Message = "User Does Not Exist"
+		}
+
+		resp.Err = true
+		resp.Status = 400
+		resp.Time = time.Now().String()
+
+	}
+	js, err := json.Marshal(resp)
+	if err != nil {
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(js)
+}
+
+func sendMessage(w http.ResponseWriter, r *http.Request) {
+
+	body, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	values, errParse := url.ParseQuery(string(body))
+	if errParse != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var tempSenderPassword, tempReceiverPassword, tempSenderSalt, tempReceiverSalt, tempSenderToken, tempReceiverToken sql.NullString
+	var tempSenderID, tempReceiverID, tempSenderAuthType, tempReceiverAuthType sql.NullInt64
+	resp := MessageResponse{}
+
+	resultSenderError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=?", values.Get("messageFromEmail")).Scan(
+		&tempSenderID, &tempSenderPassword, &tempSenderSalt, &tempSenderToken, &tempSenderAuthType,
+	)
+	switch {
+	case resultSenderError == sql.ErrNoRows:
+		resp.Message = "Sender Does Not Exist"
+		resp.Status = 400
+		resp.Err = true
+		resp.Time = time.Now().String()
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(js)
+		return
+	case resultSenderError != nil:
+		log.Fatal(err)
+	}
+
+	resultReceiverError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=?", values.Get("messageToEmail")).Scan(
+		&tempReceiverID, &tempReceiverPassword, &tempReceiverSalt, &tempReceiverToken, &tempReceiverAuthType,
+	)
+	switch {
+	case resultReceiverError == sql.ErrNoRows:
+		resp.Message = "Receiver Does Not Exist"
+		resp.Status = 400
+		resp.Err = true
+		resp.Time = time.Now().String()
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(js)
+		return
+	case resultReceiverError != nil:
+		log.Fatal(err)
+	}
+
+	var tempMessageID int64
+	lastMessageError := db.QueryRow("SELECT id FROM message ORDER BY id DESC LIMIT 1").Scan(&tempMessageID)
+
+	switch {
+	case lastMessageError == sql.ErrNoRows:
+		tempMessageID = 1
+	default:
+		tempMessageID = tempMessageID + 1
+	}
+
+	if tempSenderAuthType.Int64 == 0 {
+
+		login := checkCredentials(values.Get("password"), tempSenderSalt.String, tempSenderPassword.String)
+		if login {
+			createMessageQuery, err := db.Query("INSERT INTO `message` (`id`, `message`, `sent_at`, `message_from_id`,`message_to_id`) VALUES (?, ?, ?, ?, ?)",
+				tempMessageID, values.Get("message"), time.Now(), tempSenderID, tempReceiverID)
+			if err != nil {
+				panic(err.Error())
+			}
+			defer createMessageQuery.Close()
+
+			resp.Message = "Message sent"
+			resp.Status = 200
+			resp.Err = false
+			resp.Time = time.Now().String()
+			js, err := json.Marshal(resp)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Write(js)
+			return
+		} else {
+			resp.Message = "Login Failed"
+			resp.Status = 400
+			resp.Err = true
+			resp.Time = time.Now().String()
+			js, err := json.Marshal(resp)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Write(js)
+			return
+		}
+
+	} else if tempSenderAuthType.Int64 == 1 {
+		if values.Get("token") == tempSenderToken.String {
+			createMessageQuery, err := db.Query("INSERT INTO `message` (`id`, `message`, `sent_at`, `message_from_id`,`message_to_id`) VALUES (?, ?, ?, ?, ?)",
+				tempMessageID, values.Get("message"), time.Now(), tempSenderID, tempReceiverID)
+			if err != nil {
+				panic(err.Error())
+			}
+			defer createMessageQuery.Close()
+
+			resp.Message = "Message sent"
+			resp.Status = 200
+			resp.Err = false
+			resp.Time = time.Now().String()
+			js, err := json.Marshal(resp)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Write(js)
+			return
+		} else {
+			resp.Message = "Login Failed"
+			resp.Status = 400
+			resp.Err = true
+			resp.Time = time.Now().String()
+			js, err := json.Marshal(resp)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Write(js)
+			return
+		}
+	}
+}
+
+func messagesUserAndFriend(w http.ResponseWriter, r *http.Request) {
+
+	body, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	values, errParse := url.ParseQuery(string(body))
+	if errParse != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var tempSenderPassword, tempReceiverPassword, tempSenderSalt, tempReceiverSalt, tempSenderToken, tempReceiverToken sql.NullString
+	var tempSenderID, tempReceiverID, tempSenderAuthType, tempReceiverAuthType sql.NullInt64
+	resp := MessageResponse{}
+
+	resultSenderError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=?", values.Get("userEmail")).Scan(
+		&tempSenderID, &tempSenderPassword, &tempSenderSalt, &tempSenderToken, &tempSenderAuthType,
+	)
+	switch {
+	case resultSenderError == sql.ErrNoRows:
+		resp.Message = "Sender Does Not Exist"
+		resp.Status = 400
+		resp.Err = true
+		resp.Time = time.Now().String()
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(js)
+		return
+	case resultSenderError != nil:
+		log.Fatal(err)
+	}
+
+	resultReceiverError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=?", values.Get("friendEmail")).Scan(
+		&tempReceiverID, &tempReceiverPassword, &tempReceiverSalt, &tempReceiverToken, &tempReceiverAuthType,
+	)
+	switch {
+	case resultReceiverError == sql.ErrNoRows:
+		resp.Message = "Receiver Does Not Exist"
+		resp.Status = 400
+		resp.Err = true
+		resp.Time = time.Now().String()
+		js, err := json.Marshal(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Write(js)
+		return
+	case resultReceiverError != nil:
+		log.Fatal(err)
+	}
+	if tempSenderAuthType.Int64 == 0 {
+
+		login := checkCredentials(values.Get("password"), tempSenderSalt.String, tempSenderPassword.String)
+		if login {
+
+			resultMessages, err := db.Query(
+				"SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = ? and m.message_to_id = ?) or (m.message_from_id = ? and m.message_to_id = ?) order by m.sent_at",
+				tempSenderID, tempReceiverID, tempReceiverID, tempSenderID)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			defer resultMessages.Close()
+
+			var tempMessage, tempMessageFromEmail, tempMessageToEmail, tempSentAt sql.NullString
+			var tempMessageFromEmailID, tempMessageToEmailID sql.NullInt64
+			for resultMessages.Next() {
+
+				resultMessages.Scan(&tempMessage, &tempMessageFromEmailID, &tempMessageToEmailID, &tempSentAt)
+
+				if (tempMessageFromEmailID == tempSenderID) && (tempMessageToEmailID == tempReceiverID) {
+					tempMessageFromEmail = sql.NullString{String: values.Get("userEmail"), Valid: true}
+					tempMessageToEmail = sql.NullString{String: values.Get("friendEmail"), Valid: true}
+				} else if (tempMessageFromEmailID == tempReceiverID) && (tempMessageToEmailID == tempSenderID) {
+					tempMessageFromEmail = sql.NullString{String: values.Get("friendEmail"), Valid: true}
+					tempMessageToEmail = sql.NullString{String: values.Get("userEmail"), Valid: true}
+				}
+				messageData := MessagesAll{
+					tempMessage.String,
+					tempMessageFromEmail.String,
+					tempMessageToEmail.String,
+					tempSentAt.String,
+				}
+				resp.Msgs = append(resp.Msgs, messageData)
+			}
+
+			resp.Message = "Messages attached"
+			resp.Status = 200
+			resp.Err = false
+			resp.Time = time.Now().String()
+			js, err := json.Marshal(resp)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Write(js)
+			return
+		} else {
+			resp.Message = "Login Failed"
+			resp.Status = 400
+			resp.Err = true
+			resp.Time = time.Now().String()
+			js, err := json.Marshal(resp)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Write(js)
+			return
+		}
+
+	} else if tempSenderAuthType.Int64 == 1 {
+		if values.Get("token") == tempSenderToken.String {
+
+			resultMessages, err := db.Query(
+				"SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = ? and m.message_to_id = ?) or (m.message_from_id = ? and m.message_to_id = ?) order by m.sent_at",
+				tempSenderID, tempReceiverID, tempReceiverID, tempSenderID)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			defer resultMessages.Close()
+
+			var tempMessage, tempMessageFromEmail, tempMessageToEmail, tempSentAt sql.NullString
+			var tempMessageFromEmailID, tempMessageToEmailID sql.NullInt64
+			for resultMessages.Next() {
+
+				resultMessages.Scan(&tempMessage, &tempMessageFromEmailID, &tempMessageToEmailID, &tempSentAt)
+
+				if (tempMessageFromEmailID == tempSenderID) && (tempMessageToEmailID == tempReceiverID) {
+					tempMessageFromEmail = sql.NullString{String: values.Get("userEmail"), Valid: true}
+					tempMessageToEmail = sql.NullString{String: values.Get("friendEmail"), Valid: true}
+				} else if (tempMessageFromEmailID == tempReceiverID) && (tempMessageToEmailID == tempSenderID) {
+					tempMessageFromEmail = sql.NullString{String: values.Get("friendEmail"), Valid: true}
+					tempMessageToEmail = sql.NullString{String: values.Get("userEmail"), Valid: true}
+				}
+				messageData := MessagesAll{
+					tempMessage.String,
+					tempMessageFromEmail.String,
+					tempMessageToEmail.String,
+					tempSentAt.String,
+				}
+				resp.Msgs = append(resp.Msgs, messageData)
+			}
+
+			resp.Message = "Message sent"
+			resp.Status = 200
+			resp.Err = false
+			resp.Time = time.Now().String()
+			js, err := json.Marshal(resp)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Write(js)
+			return
+		} else {
+			resp.Message = "Login Failed"
+			resp.Status = 400
+			resp.Err = true
+			resp.Time = time.Now().String()
+			js, err := json.Marshal(resp)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Write(js)
+		}
 	}
 }
