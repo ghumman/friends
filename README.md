@@ -14,4 +14,3 @@ go run *.go
 or 
 Figure out how to run go install
 ```
-
