@@ -23,3 +23,18 @@ python get-pip.py
 python -m pip install Django
 
 ```
+
+## Initializing Django Project
+```
+django-admin startproject friends
+```
+
+## Create Django/Python Application
+```
+python manage.py startapp friends
+```
+
+## Running application
+```
+python manage.py runserver
+```
