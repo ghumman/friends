@@ -31,7 +31,7 @@ django-admin startproject friends
 
 ## Create Django/Python Application
 ```
-python manage.py startapp friends
+python manage.py startapp friends_app
 ```
 
 ## Running application
