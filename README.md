@@ -29,12 +29,18 @@ python -m pip install Django
 django-admin startproject friends
 ```
 
-## Create Django/Python Application
+## Create Django/Python Application [This is not going to be Django project, instead it will be a Flask project]
 ```
 python manage.py startapp friends_app
+```
+## Installing Flask and Libraries
+```
+pip install Flask
+pip install flask-mysql
+
 ```
 
 ## Running application
 ```
-python manage.py runserver
+python main.py
 ```

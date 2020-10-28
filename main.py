@@ -1,34 +1,69 @@
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from urlparse import parse_qs
-import cgi
+import flask
+from flask import request
+import datetime; 
 
-class GP(BaseHTTPRequestHandler):
-    def _set_headers(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-    def do_HEAD(self):
-        self._set_headers()
-    def do_GET(self):
-        self._set_headers()
-        print self.path
-        print parse_qs(self.path[2:])
-        self.wfile.write("<html><body><h1>Get Request Received!</h1></body></html>")
-    def do_POST(self):
-        self._set_headers()
-        form = cgi.FieldStorage(
-            fp=self.rfile,
-            headers=self.headers,
-            environ={'REQUEST_METHOD': 'POST'}
-        )
-        print form.getvalue("foo")
-        print form.getvalue("bin")
-        self.wfile.write("<html><body><h1>POST Request Received!</h1></body></html>")
+from flaskext.mysql import MySQL
+from hashlib import pbkdf2_hmac
+import binascii
+import base64
 
-def run(server_class=HTTPServer, handler_class=GP, port=8088):
-    server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
-    print 'Server running at localhost:8088...'
-    httpd.serve_forever()
 
-run()
+app = flask.Flask(__name__)
+app.config["DEBUG"] = True
+
+mysql = MySQL()
+app.config['MYSQL_DATABASE_USER'] = 'ghumman'
+app.config['MYSQL_DATABASE_PASSWORD'] = 'ghumman'
+app.config['MYSQL_DATABASE_DB'] = 'friends_mysql'
+app.config['MYSQL_DATABASE_HOST'] = 'localhost'
+mysql.init_app(app)
+
+conn = mysql.connect()
+cursor =conn.cursor()
+
+
+@app.route('/login', methods=['POST'])
+def login():
+
+    # cursor.execute("select * from user where")
+    # data = cursor.fetchall()
+    # print(data)
+    # content = request.json
+    try:
+        email = request.form['email']
+        password = request.form['password']
+    except: 
+        resp = {'status': 400, 'error': True, 'message': 'Email or Password missing', 'time': datetime.datetime.now()} 
+        return resp
+    stmt = ("select password, salt from user where email=%s")
+    data = (email)
+    cursor.execute(stmt, data)
+    data = cursor.fetchone()
+
+    if data is None: 
+        resp = {'status': 400, 
+        'error': True, 
+        'message': 'User Does Not Exist', 
+        'time': datetime.datetime.now()} 
+        return resp
+    print("bytes(password, 'utf-8'): ", bytes(password, 'utf-8').hex())
+    
+    key = pbkdf2_hmac(
+        hash_name = 'sha1', 
+        password = password.encode(), 
+        salt = data[1].encode(),
+        iterations = 10000, 
+        dklen = 32
+    )
+    # check if new created hashed key equals to password saved in database
+    if base64.b64encode(key).decode("utf-8") == data[0]:
+        resp = {'status': 200, 'error': False, 'message': 'Logged In', 'time': datetime.datetime.now()} 
+        return resp
+    else :
+        resp = {'status': 400, 'error': True, 'message': 'Login Failed', 'time': datetime.datetime.now()} 
+        return resp
+
+
+
+# Run the applicaiton
+app.run(host='127.0.0.1', port=5005)
