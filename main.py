@@ -7,6 +7,8 @@ from hashlib import pbkdf2_hmac
 import binascii
 import base64
 from random import randrange
+import smtplib, ssl
+import uuid
 
 
 app = flask.Flask(__name__)
@@ -24,7 +26,6 @@ cursor =conn.cursor()
 
 @app.route('/add-user', methods=['POST'])
 def addUser():
-
     try:
         email = request.form['email']
         password = request.form['password']
@@ -64,9 +65,10 @@ def addUser():
     cursor.execute(stmt, data)
     conn.commit()
 
+    sendNewUserEmail(email, True, "")
+
     resp = {'status': 200, 'error': False, 'message': 'User Created', 'time': datetime.datetime.now()} 
     return resp
-
 
 
 @app.route('/login', methods=['POST'])
@@ -98,6 +100,178 @@ def login():
     else :
         resp = {'status': 400, 'error': True, 'message': 'Login Failed', 'time': datetime.datetime.now()} 
         return resp
+
+
+@app.route('/change-password', methods=['POST'])
+def changePassword():
+
+    try:
+        email = request.form['email']
+        password = request.form['password']
+        newPassword = request.form['newPassword']
+    except: 
+        resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
+        return resp
+    stmt = ("select password, salt from user where email=%s")
+    data = (email)
+    cursor.execute(stmt, data)
+    data = cursor.fetchone()
+
+    if data is None: 
+        resp = {'status': 400, 
+        'error': True, 
+        'message': 'User Does Not Exist', 
+        'time': datetime.datetime.now()} 
+        return resp
+    
+    key = generateKey(password, data[1])
+    # check if new created hashed key equals to password saved in database
+    if base64.b64encode(key).decode("utf-8") == data[0]:
+        salt = generateSalt()
+        dbPassword = base64.b64encode(generateKey(newPassword, salt)).decode("utf-8") 
+        stmt = ("UPDATE user SET salt=%s, password=%s where email=%s")
+        data = (salt, dbPassword, email)
+        cursor.execute(stmt, data)
+        conn.commit()
+        
+        resp = {'status': 200, 'error': False, 'message': 'Password changed', 'time': datetime.datetime.now()} 
+        return resp
+    else :
+        resp = {'status': 400, 'error': True, 'message': 'Original password not right', 'time': datetime.datetime.now()} 
+        return resp
+
+@app.route('/forgot-password', methods=['POST'])
+def forgotPassword():
+
+    try:
+        email = request.form['email']
+    except: 
+        resp = {'status': 400, 'error': True, 'message': 'Email is required', 'time': datetime.datetime.now()} 
+        return resp
+    stmt = ("select password, salt from user where email=%s")
+    data = (email)
+    cursor.execute(stmt, data)
+    data = cursor.fetchone()
+
+    if data is None: 
+        resp = {'status': 400, 
+        'error': True, 
+        'message': 'User Does Not Exist', 
+        'time': datetime.datetime.now()} 
+        return resp
+
+    uuidNumber = uuid.uuid4()
+    stmt = ("UPDATE user SET reset_token=%s where email=%s")
+    data = (str(uuidNumber), email)
+    cursor.execute(stmt, data)
+    conn.commit()
+
+    sendNewUserEmail(email, False, str(uuidNumber))
+    
+    resp = {'status': 200, 'error': False, 'message': 'Reset password is sent', 'time': datetime.datetime.now()} 
+    return resp
+
+@app.route('/reset-password', methods=['POST'])
+def resetPassword():
+
+    try:
+        token = request.form['token']
+        password = request.form['password']
+    except: 
+        resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
+        return resp
+    stmt = ("select id from user where reset_token=%s")
+    data = (token)
+    cursor.execute(stmt, data)
+    data = cursor.fetchone()
+
+    if data is None: 
+        resp = {'status': 400, 
+        'error': True, 
+        'message': 'Token is not valid', 
+        'time': datetime.datetime.now()} 
+        return resp
+    userID = data[0]
+
+    salt = generateSalt()
+    dbPassword = base64.b64encode(generateKey(password, salt)).decode("utf-8") 
+    stmt = ("UPDATE user SET salt=%s, password=%s, token=%s where id=%s")
+    data = (salt, dbPassword, None, userID)
+    cursor.execute(stmt, data)
+    conn.commit()
+    
+    resp = {'status': 200, 'error': False, 'message': 'Password successfully reset', 'time': datetime.datetime.now()} 
+    return resp
+
+@app.route('/all-friends', methods=['POST'])
+def allFriends():
+
+    try:
+        email = request.form['email']
+        password = request.form['password']
+    except: 
+        resp = {'status': 400, 'error': True, 'message': 'Email or Password missing', 'time': datetime.datetime.now()} 
+        return resp
+    stmt = ("select password, salt from user where email=%s")
+    data = (email)
+    cursor.execute(stmt, data)
+    data = cursor.fetchone()
+
+    if data is None: 
+        resp = {'status': 400, 
+        'error': True, 
+        'message': 'User Does Not Exist', 
+        'time': datetime.datetime.now()} 
+        return resp
+    
+    key = generateKey(password, data[1])
+    # check if new created hashed key equals to password saved in database
+    if base64.b64encode(key).decode("utf-8") == data[0]:
+        stmt = ("select first_name, last_name, email FROM user where email!=%s")
+        data = (email)
+        cursor.execute(stmt, data)
+        rows = cursor.fetchall()
+        users = []
+        for r in rows: 
+            users.append({"firstName" : r[0], "lastName" : r[1], "email" : r[2]})
+
+        resp = {'status': 200, 'error': False, 'message': 'Friends attached', 'time': datetime.datetime.now(), 'usersAll': users} 
+        return resp
+    else :
+        resp = {'status': 400, 'error': True, 'message': 'Login Failed', 'time': datetime.datetime.now()} 
+        return resp
+
+
+def sendNewUserEmail(email, accountCreated, token):
+
+    port = 465  # For SSL
+    smtp_server = "smtp.gmail.com"
+    sender_email = "example@gmail.com"  # Enter your address
+    receiver_email = email  # Enter receiver address
+    password = input("Type your password and press enter: ")
+
+    message = ""
+    if accountCreated:
+        message = """\
+        Subject: Welcome to Friends
+
+        New Account Created."""
+    else:
+        message = """\
+        Subject: Password Reset Request
+
+        To reset your password, click the link below:
+        http://localhost:3000/#/reset-password?token=""" 
+        message = message + token
+
+
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
+        server.login(sender_email, password)
+        server.sendmail(sender_email, receiver_email, message)
+
+
 
 def generateKey(password, salt):
     return pbkdf2_hmac(
