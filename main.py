@@ -70,7 +70,6 @@ def addUser():
     resp = {'status': 200, 'error': False, 'message': 'User Created', 'time': datetime.datetime.now()} 
     return resp
 
-
 @app.route('/login', methods=['POST'])
 def login():
 
@@ -100,7 +99,6 @@ def login():
     else :
         resp = {'status': 400, 'error': True, 'message': 'Login Failed', 'time': datetime.datetime.now()} 
         return resp
-
 
 @app.route('/change-password', methods=['POST'])
 def changePassword():
@@ -241,6 +239,129 @@ def allFriends():
         resp = {'status': 400, 'error': True, 'message': 'Login Failed', 'time': datetime.datetime.now()} 
         return resp
 
+@app.route('/send-message', methods=['POST'])
+def sendMessage():
+
+    try:
+        message = request.form['message']
+        messageFromEmail = request.form['messageFromEmail']
+        messageToEmail = request.form['messageToEmail']
+        password = request.form['password']
+    except: 
+        resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
+        return resp
+    stmt = ("select password, salt, id from user where email=%s")
+    data = (messageFromEmail)
+    cursor.execute(stmt, data)
+    dataSender = cursor.fetchone()
+
+    if dataSender is None: 
+        resp = {'status': 400, 
+        'error': True, 
+        'message': 'Sender Does Not Exist', 
+        'time': datetime.datetime.now()} 
+        return resp
+    
+    key = generateKey(password, dataSender[1])
+    # check if new created hashed key equals to password saved in database
+    if base64.b64encode(key).decode("utf-8") == dataSender[0]:
+
+        # Check if receiver exists
+        stmt = ("select password, salt, id from user where email=%s")
+        data = (messageToEmail)
+        cursor.execute(stmt, data)
+        dataReceiver = cursor.fetchone()
+
+        if dataReceiver is None: 
+            resp = {'status': 400, 
+            'error': True, 
+            'message': 'Receiver Does Not Exist', 
+            'time': datetime.datetime.now()} 
+            return resp
+
+        # Sender credentials are correct and both sender and receiver exists
+        saveMessage(message, dataSender[2], dataReceiver[2])
+
+        resp = {'status': 200, 'error': False, 'message': 'Message sent', 'time': datetime.datetime.now()} 
+        return resp
+    else :
+        resp = {'status': 400, 'error': True, 'message': 'Login Failed', 'time': datetime.datetime.now()} 
+        return resp
+
+@app.route('/messages-user-and-friend', methods=['POST'])
+def messagesUserAndFriend():
+
+    try:
+        userEmail = request.form['userEmail']
+        friendEmail = request.form['friendEmail']
+        password = request.form['password']
+    except: 
+        resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
+        return resp
+    stmt = ("select password, salt, id from user where email=%s")
+    data = (userEmail)
+    cursor.execute(stmt, data)
+    dataSender = cursor.fetchone()
+
+    if dataSender is None: 
+        resp = {'status': 400, 
+        'error': True, 
+        'message': 'Sender Does Not Exist', 
+        'time': datetime.datetime.now()} 
+        return resp
+    
+    key = generateKey(password, dataSender[1])
+    # check if new created hashed key equals to password saved in database
+    if base64.b64encode(key).decode("utf-8") == dataSender[0]:
+
+        # Check if receiver exists
+        stmt = ("select password, salt, id from user where email=%s")
+        data = (friendEmail)
+        cursor.execute(stmt, data)
+        dataReceiver = cursor.fetchone()
+
+        if dataReceiver is None: 
+            resp = {'status': 400, 
+            'error': True, 
+            'message': 'Receiver Does Not Exist', 
+            'time': datetime.datetime.now()} 
+            return resp
+        
+        stmt = ("SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = %s and m.message_to_id = %s) or (m.message_from_id = %s and m.message_to_id = %s) order by m.sent_at")
+        data = (dataSender[2], dataReceiver[2], dataReceiver[2], dataSender[2])
+        cursor.execute(stmt, data)
+        rows = cursor.fetchall()
+        messages = []
+        for r in rows: 
+            if r[1] == dataSender[2] and r[2] == dataReceiver[2]:
+                messages.append({"message" : r[0], "messageFromEmail" : userEmail, "messageToEmail" : friendEmail, "sentAt": r[3]})
+            else:
+                messages.append({"message" : r[0], "messageFromEmail" : friendEmail, "messageToEmail" : userEmail, "sentAt": r[3]})
+
+
+        resp = {'status': 200, 'error': False, 'message': 'Messages attached', 'time': datetime.datetime.now(), 'msgs': messages} 
+        return resp
+    else :
+        resp = {'status': 400, 'error': True, 'message': 'Login Failed', 'time': datetime.datetime.now()} 
+        return resp
+
+
+def saveMessage(message, senderID, receiverID):
+    stmt = ("SELECT id FROM message ORDER BY id DESC LIMIT 1")
+    cursor.execute(stmt)
+    data = cursor.fetchone()
+    messageID = 0
+    if data is None: 
+        messageID = 1
+    else: 
+        messageID = data[0] + 1
+        
+    stmt = ("insert into message (id, message, sent_at, message_from_id, message_to_id) VALUES (%s, %s, %s, %s, %s)")
+    data = (messageID, message, datetime.datetime.now() , senderID, receiverID)
+    cursor.execute(stmt, data)
+    conn.commit()
+    
+
 
 def sendNewUserEmail(email, accountCreated, token):
 
@@ -271,8 +392,6 @@ def sendNewUserEmail(email, accountCreated, token):
         server.login(sender_email, password)
         server.sendmail(sender_email, receiver_email, message)
 
-
-
 def generateKey(password, salt):
     return pbkdf2_hmac(
         hash_name = 'sha1', 
@@ -281,6 +400,7 @@ def generateKey(password, salt):
         iterations = 10000, 
         dklen = 32
     )
+
 def generateSalt(): 
     ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
     returnValue = ""
