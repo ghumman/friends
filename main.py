@@ -193,7 +193,7 @@ def resetPassword():
 
     salt = generateSalt()
     dbPassword = base64.b64encode(generateKey(password, salt)).decode("utf-8") 
-    stmt = ("UPDATE user SET salt=%s, password=%s, token=%s where id=%s")
+    stmt = ("UPDATE user SET salt=%s, password=%s, reset_token=%s where id=%s")
     data = (salt, dbPassword, None, userID)
     cursor.execute(stmt, data)
     conn.commit()
