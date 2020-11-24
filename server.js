@@ -226,12 +226,84 @@ app.post('/all-friends', urlencodedParser, function (req, res) {
 // Messages Related Endpoints
 // send-message
 app.post('/send-message', urlencodedParser, function (req, res) {
+	const message = req.body.message;
+	const messageFromEmail = req.body.messageFromEmail;
+	const messageToEmail = req.body.messageToEmail;
+	const password = req.body.password;
 
+	if (message == undefined || messageFromEmail == undefined || messageToEmail == undefined || password == undefined) {
+		return res.send({'status': 400, 'error': true, 'message': 'Required data missing', 'time': new Date(Date.now())} );
+	}
+	var sqlCheckSender = mysql.format("select password, salt, id from user where email=?", [messageFromEmail]);
+	con.query(sqlCheckSender, function (errorCheckSender, resultsCheckSender, fields) {
+		if (errorCheckSender) throw errorCheckSender;
+		if (resultsCheckSender.length == 0) {
+			return res.send({'status': 400, 'error': true, 'message': 'Sender Does Not Exist', 'time': new Date(Date.now())} );
+		}
+
+		const key = generateKey(password, resultsCheckSender[0].salt);
+		if (resultsCheckSender[0].password === key) {
+			var sqlCheckReceiverExist = mysql.format("select password, salt, id from user where email=?", [messageToEmail]);
+			con.query(sqlCheckReceiverExist, function (errorCheckReceiverExist, resultsCheckReceiverExist, fields) {
+				if (errorCheckReceiverExist) throw errorCheckReceiverExist;
+				if (resultsCheckReceiverExist.length == 0) {
+					return res.send({'status': 400, 'error': true, 'message': 'Receiver Does Not Exist', 'time': new Date(Date.now())} );
+				}
+				// Sender credentials are correct and both sender and receiver exists
+				saveMessage(message, resultsCheckSender[0].id, resultsCheckReceiverExist[0].id);
+				return res.send({'status': 200, 'error': false, 'message': 'Message sent', 'time': new Date(Date.now())} );
+			});
+		} else {
+			return res.send({'status': 400, 'error': true, 'message': 'Login Failed', 'time': new Date(Date.now())} );
+		}
+	});
 })
 
 // messages-user-and-friend
 app.post('/messages-user-and-friend', urlencodedParser, function (req, res) {
+	const userEmail = req.body.userEmail;
+	const friendEmail = req.body.friendEmail;
+	const password = req.body.password;
 
+	if (userEmail == undefined || friendEmail == undefined  || password == undefined) {
+		return res.send({'status': 400, 'error': true, 'message': 'Required data missing', 'time': new Date(Date.now())} );
+	}
+
+	var sqlCheckUser = mysql.format("select password, salt, id from user where email=?", [userEmail]);
+	con.query(sqlCheckUser, function (errorCheckUser, resultsCheckUser, fields) {
+		if (errorCheckUser) throw errorCheckUser;
+		if (resultsCheckUser.length == 0) {
+			return res.send({'status': 400, 'error': true, 'message': 'Sender Does Not Exist', 'time': new Date(Date.now())} );
+		}
+
+		const key = generateKey(password, resultsCheckUser[0].salt);
+		if (resultsCheckUser[0].password === key) {
+			var sqlCheckReceiverExist = mysql.format("select password, salt, id from user where email=?", [friendEmail]);
+			con.query(sqlCheckReceiverExist, function (errorCheckReceiverExist, resultsCheckReceiverExist, fields) {
+				if (errorCheckReceiverExist) throw errorCheckReceiverExist;
+				if (resultsCheckReceiverExist.length == 0) {
+					return res.send({'status': 400, 'error': true, 'message': 'Receiver Does Not Exist', 'time': new Date(Date.now())} );
+				}
+				// Sender credentials are correct and both sender and receiver exists
+				var sqlFriendMessages = mysql.format("SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = ? and m.message_to_id = ?) or (m.message_from_id = ? and m.message_to_id = ?) order by m.sent_at", [resultsCheckUser[0].id, resultsCheckReceiverExist[0].id, resultsCheckReceiverExist[0].id, resultsCheckUser[0].id]);
+				con.query(sqlFriendMessages, function (errorFriendMessages, resultsFriendMessages, fields) {
+					if (errorFriendMessages) throw errorFriendMessages;
+					var messages = [];
+					for (i=0; i<resultsFriendMessages.length; i++) {
+						if (resultsFriendMessages[i].message_from_id == resultsCheckUser[0].id && resultsFriendMessages[i].message_to_id == resultsCheckReceiverExist[0].id) {
+							messages.push({"message" : resultsFriendMessages[i].message, "messageFromEmail" : userEmail, "messageToEmail" : friendEmail, "sentAt": resultsFriendMessages[i].sent_at});
+						}
+						else {
+							messages.push({"message" : resultsFriendMessages[i].message, "messageFromEmail" : friendEmail, "messageToEmail" : userEmail, "sentAt": resultsFriendMessages[i].sent_at});
+						}
+					}
+					return res.send({'status': 200, 'error': false, 'message': 'Messages attached', 'time': new Date(Date.now()), 'msgs' : messages} );
+				});
+			});
+		} else {
+			return res.send({'status': 400, 'error': true, 'message': 'Login Failed', 'time': new Date(Date.now())} );
+		}
+	});
 })
 
 
@@ -287,6 +359,25 @@ def sendNewUserEmail(email, accountCreated, token):
         server.login(sender_email, password)
 		server.sendmail(sender_email, receiver_email, message)
 */
+
+const saveMessage = (message, senderID, receiverID) => {
+
+	var sqlGetID = mysql.format("SELECT id FROM message ORDER BY id DESC LIMIT 1");
+	con.query(sqlGetID, function (errorGetID, resultsGetID, fields) {
+		if (errorGetID) throw errorGetID;
+		var newMessageID = 1;
+
+		if (resultsGetID.length > 0) {
+			newMessageID = resultsGetID[0].id + 1;
+		}
+		var sqlSendMessage = mysql.format("insert into message (id, message, sent_at, message_from_id, message_to_id) VALUES (?, ?, ?, ?, ?)", [newMessageID, message, new Date(Date.now()), senderID, receiverID]);
+		con.query(sqlSendMessage, function (errorSendMessage, resultsSendMessage, fields) {
+			if (errorSendMessage) throw errorSendMessage;
+		});
+	});
+
+}
+
 
 
 // start the app
