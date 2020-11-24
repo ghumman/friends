@@ -7,8 +7,13 @@ git commit -m "Initial commit"
 git push python master:node-js
 ```
 
-## Startint the server
+## Starting the server
 ```
 node server.js
 ```
 
+## Error when connecting to local mysql instant
+```
+Followed this link to fix this error
+https://stackoverflow.com/questions/50093144/mysql-8-0-client-does-not-support-authentication-protocol-requested-by-server
+```
