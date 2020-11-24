@@ -4,6 +4,7 @@ var bodyParser = require('body-parser');
 var fs = require("fs");
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
+var nodemailer = require('nodemailer');
 
 // create application/x-www-form-urlencoded parser
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
@@ -16,6 +17,14 @@ var con = mysql.createConnection({
   password: "ghumman",
   database : "friends_mysql"
 });
+
+var transporter = nodemailer.createTransport({
+	service: 'gmail',
+	auth: {
+	  user: 'example@gmail.com',
+	  pass: 'xxxxxx'
+	}
+  });
 
 con.connect(function(err) {
   if (err) throw err;
@@ -46,24 +55,15 @@ app.post('/add-user', urlencodedParser, function (req, res) {
 			con.query(sqlGetID, function (errorGetID, resultsGetID, fields) {
 				if (errorGetID) throw errorGetID;
 				var newUserID = 1;
-				console.log('value of resultsGetID.id: ', resultsGetID[0].id );
 				if (resultsGetID.length > 0) {
 					newUserID = resultsGetID[0].id + 1;
 				}
-
-				console.log('newUserID: ', newUserID);
-				console.log('new Date(Date.now()): ', new Date(Date.now()));
-				console.log('dbPassword: ', dbPassword);
-				console.log('salt: ', salt);
-				console.log('firstName: ', firstName);
-				console.log('lastName: ', lastName);
-				console.log('email: ', email);
 
 				// create new user using id, auth_type, created_at, email, firstName, lastName, dbPassword, salt 
 				var sqlCreateUser = mysql.format("insert into user (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [newUserID, 0, new Date(Date.now()) , email, firstName, lastName, dbPassword, salt]);
 				con.query(sqlCreateUser, function (errorCreateUser, resultsCreateUser, fields) {
 					if (errorCreateUser) throw errorCreateUser;
-					// sendNewUserEmail(email, true, "")
+					sendNewUserEmail(email, true, "")
 					return res.send({'status': 200, 'error': false, 'message': 'User Created', 'time': new Date(Date.now())} );
 				});
 			});
@@ -154,7 +154,7 @@ app.post('/forgot-password', urlencodedParser, function (req, res) {
 		con.query(sqlUpdateUser, function (errorUpdateUser, resultsUpdateUser, fields) {
 			if (errorUpdateUser) throw errorUpdateUser;
 
-			// sendNewUserEmail(email, false, uuidNumber)
+			sendNewUserEmail(email, false, uuidNumber)
 			return res.send({'status': 200, 'error': false, 'message': 'Reset password is sent', 'time': new Date(Date.now())} );
 		});
 	});
@@ -328,37 +328,20 @@ const generateSalt = () => {
     return returnValue
 }
 
-// send email
-/*
-def sendNewUserEmail(email, accountCreated, token):
-
-    port = 465  # For SSL
-    smtp_server = "smtp.gmail.com"
-    sender_email = "example@gmail.com"  # Enter your address
-    receiver_email = email  # Enter receiver address
-    password = input("Type your password and press enter: ")
-
-    message = ""
-    if accountCreated:
-        message = """\
-        Subject: Welcome to Friends
-
-        New Account Created."""
-    else:
-        message = """\
-        Subject: Password Reset Request
-
-        To reset your password, click the link below:
-        http://localhost:3000/#/reset-password?token=""" 
-        message = message + token
-
-
-
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
-        server.login(sender_email, password)
-		server.sendmail(sender_email, receiver_email, message)
-*/
+const sendNewUserEmail  = (email, accountCreated, token) => {
+	var mailOptions = {
+		from: 'example@gmail.com',
+		to: email,
+		subject: accountCreated ? "Welcome to Friends" : "Password Reset Request",
+		text: accountCreated ? "New Account Created." : "To reset your password, click the link below:\n http://localhost:3000/#/reset-password?token=" + token
+	  };
+	  
+	  transporter.sendMail(mailOptions, function(error, info){
+		if (error) {
+		  console.log(error);
+		}
+	  });
+}
 
 const saveMessage = (message, senderID, receiverID) => {
 
