@@ -4,7 +4,11 @@ class UsersController < ApplicationController
     end
 
     def login
-        render json: {error: 'User not Found'}
+        $name = "ghummantech@gmail.com"
+        $sql = "select * from user where email=\"#$name\""
+        # render json: {values: $sql}
+        # sql = "select * from user where email=#$name"
+        render json: {values: ActiveRecord::Base.connection.execute($sql)}
     end
 
     def changePassword
