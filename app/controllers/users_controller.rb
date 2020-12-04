@@ -2,6 +2,7 @@ require 'date'
 require 'openssl'
 require "base64"
 require 'securerandom'
+require 'net/smtp'
 
 class UsersController < ApplicationController
     skip_before_action :verify_authenticity_token
@@ -52,8 +53,7 @@ class UsersController < ApplicationController
         stmt = "insert into user (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (" + userID.to_s + ", 0, \"" + DateTime.now().to_s + "\", \"" + email + "\", \"" + firstName + "\", \"" + lastName + "\", \"" + dbPassword + "\", \"" + salt + "\")"
         data =  ActiveRecord::Base.connection.exec_query(stmt)
 
-        
-        sendNewUserEmail(email, true, "")
+        UserMailer.with(email: email, accountCreated: true, token: "").welcome_email.deliver_now
         return render json: {
                 status: 200,
                 error: false,
@@ -183,7 +183,7 @@ class UsersController < ApplicationController
         stmt = "UPDATE user SET reset_token=\"" + uuidNumber.to_s + "\" where email=\"" + email + "\""
         data =  ActiveRecord::Base.connection.exec_query(stmt)
         
-        sendNewUserEmail(email, false, uuidNumber.to_s)
+        UserMailer.with(email: email, accountCreated: false, token: uuidNumber.to_s).welcome_email.deliver_now
 
         return render json: {
             status: 200,
@@ -296,10 +296,6 @@ class UsersController < ApplicationController
             returnValue = returnValue + $ALPHABET[rand(0..29)]
         end
         return returnValue
-    end
-
-    def sendNewUserEmail(email, accountCreated, token)
-
     end
 
 end
