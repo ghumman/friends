@@ -81,294 +81,294 @@
         
         break;
 
-            case '/login':
+        case '/login':
 
-                if (isTheseParametersAvailable(array('email', 'password'))) {
-                    $email = $_POST['email'];
-                    $password = $_POST['password'];
+            if (isTheseParametersAvailable(array('email', 'password'))) {
+                $email = $_POST['email'];
+                $password = $_POST['password'];
 
-                    
-          
-                    try {
-                        $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
-                        $stmt->bindParam(':email', $email);
-          
-                        $stmt->execute();
-          
-                        if ($stmt->rowCount() > 0) {
-                            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                            
-                            $key = base64_encode(generateKey($password, $results[0]['salt']));
-
-                            if ($key == $results[0]['password']) {
-
-
-                                $response['status'] = 200;
-                                $response['error'] = false;
-                                $response['message'] = 'Logged In';
-                                $response['time'] = date("Y-m-d H:i:s");
-                            } else {
-                                $response['status'] = 400;
-                                $response['error'] = true;
-                                $response['message'] = 'Login Failed';
-                                $response['time'] = date("Y-m-d H:i:s");
-                            }
-                        } else {
-                            $response['status'] = 400;
-                            $response['error'] = true;
-                            $response['message'] = 'User Does Not Exist';
-                            $response['time'] = date("Y-m-d H:i:s");
-                        }
-                    }	// try ends
-                    catch (PDOException $e) {
-                        $response['status'] = 400;
-                        $response['error'] = true;
-                        $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
-                        $response['time'] = date("Y-m-d H:i:s");
-                    }	// catch ends
-                } 	// if all arguments are not present ends
-                else {
-                    $response['status'] = 400;
-                    $response['error'] = true;
-                    $response['message'] = 'Email or Password missing';
-                    $response['time'] = date("Y-m-d H:i:s");
-                }
-                break;
-
-
-                case '/change-password':
-
-                if (isTheseParametersAvailable(array('email', 'password', 'newPassword'))) {
-                    $password = $_POST['password'];
-                    $newPassword = $_POST['newPassword'];
-                    $email = $_POST['email'];
-
-                    try {
-                        $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
-                        $stmt->bindParam(':email', $email);
-          
-                        $stmt->execute();
-          
-                        if ($stmt->rowCount() > 0) {
-                            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                            
-                            $key = base64_encode(generateKey($password, $results[0]['salt']));
-
-                            if ($key == $results[0]['password']) {
-
-                                $salt = generateSalt();
-                                $dbPassword = base64_encode(generateKey($newPassword, $salt));
-
-                                $stmt = $conn->prepare("UPDATE user SET salt=:salt, password=:dbPassword where email=:email");
-                                $stmt->bindParam(':email', $email);
-                                $stmt->bindParam(':salt', $salt);
-                                $stmt->bindParam(':dbPassword', $dbPassword);
-                                $stmt->execute();
-
-
-                                $response['status'] = 200;
-                                $response['error'] = false;
-                                $response['message'] = 'Password changed';
-                                $response['time'] = date("Y-m-d H:i:s");
-                            } else {
-                                $response['status'] = 400;
-                                $response['error'] = true;
-                                $response['message'] = 'Original password not right';
-                                $response['time'] = date("Y-m-d H:i:s");
-                            }
-                        } else {
-                            $response['status'] = 400;
-                            $response['error'] = true;
-                            $response['message'] = 'User Does Not Exist';
-                            $response['time'] = date("Y-m-d H:i:s");
-                        }
-                    } catch (PDOException $e) {
-                        $response['status'] = 400;
-                        $response['error'] = true;
-                        $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
-                        $response['time'] = date("Y-m-d H:i:s");
-                    } // catch ends
-                } else {
-                    $response['status'] = 400;
-                    $response['error'] = true;
-                    $response['message'] = 'Required data missing';
-                    $response['time'] = date("Y-m-d H:i:s");
-                }
-                break;
-
-                case '/forgot-password':
-
-                    if (isTheseParametersAvailable(array('email'))) {
-                        $email = $_POST['email'];
-            
-                        try {
-
-                            $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
-                            $stmt->bindParam(':email', $email);
-              
-                            $stmt->execute();
-              
-                            if ($stmt->rowCount() > 0) {
-
-                                $token = uniqid();
-                                $stmt = $conn->prepare("UPDATE user SET reset_token=:token where email=:email");
-                                $stmt->bindParam(':email', $email);
-                                $stmt->bindParam(':token', $token);
-                    
-                                $stmt->execute();
-
-
-                                sendNewUserEmail($email, false, $token);
-                                
-
-                                $response['status'] = 200;
-                                $response['error'] = false;
-                                $response['message'] = 'Reset password is sent';
-                                $response['time'] = date("Y-m-d H:i:s");
+                
+        
+                try {
+                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
+                    $stmt->bindParam(':email', $email);
+        
+                    $stmt->execute();
+        
+                    if ($stmt->rowCount() > 0) {
+                        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         
-                            } else {
-                                $response['status'] = 400;
-                                $response['error'] = true;
-                                $response['message'] = 'User Does Not Exist';
-                                $response['time'] = date("Y-m-d H:i:s");
-                            }
+                        $key = base64_encode(generateKey($password, $results[0]['salt']));
 
-                        } catch (PDOException $e) {
+                        if ($key == $results[0]['password']) {
+
+
+                            $response['status'] = 200;
+                            $response['error'] = false;
+                            $response['message'] = 'Logged In';
+                            $response['time'] = date("Y-m-d H:i:s");
+                        } else {
                             $response['status'] = 400;
                             $response['error'] = true;
-                            $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
+                            $response['message'] = 'Login Failed';
                             $response['time'] = date("Y-m-d H:i:s");
-                        } // catch ends
+                        }
                     } else {
                         $response['status'] = 400;
                         $response['error'] = true;
-                        $response['message'] = 'Email is required';
+                        $response['message'] = 'User Does Not Exist';
                         $response['time'] = date("Y-m-d H:i:s");
                     }
-                  break;
-
-      case '/reset-password':
-
-      if (isTheseParametersAvailable(array('token', 'password'))) {
-          $token = $_POST['token'];
-          $password = $_POST['password'];
-
-          try {
-
-            $stmt = $conn->prepare("select id from user where reset_token=:token");
-            $stmt->bindParam(':token', $token);
-
-            $stmt->execute();
-            if ($stmt->rowCount() > 0) {
-                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                $userID = $results[0]['id'];
-
-                $salt = generateSalt();
-                $dbPassword = base64_encode(generateKey($password, $salt));
-
-                $stmt = $conn->prepare("UPDATE user SET salt=:salt, password=:dbPassword, reset_token=NULL where id=:userID");
-                $stmt->bindParam(':salt', $salt);
-                $stmt->bindParam(':dbPassword', $dbPassword);
-                $stmt->bindParam(':userID', $userID);
-                $stmt->execute();
-                
-
-                $response['status'] = 200;
-                $response['error'] = false;
-                $response['message'] = 'Password successfully reset';
+                }	// try ends
+                catch (PDOException $e) {
+                    $response['status'] = 400;
+                    $response['error'] = true;
+                    $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
+                    $response['time'] = date("Y-m-d H:i:s");
+                }	// catch ends
+            } 	// if all arguments are not present ends
+            else {
+                $response['status'] = 400;
+                $response['error'] = true;
+                $response['message'] = 'Email or Password missing';
                 $response['time'] = date("Y-m-d H:i:s");
+            }
+        break;
 
+
+        case '/change-password':
+
+            if (isTheseParametersAvailable(array('email', 'password', 'newPassword'))) {
+                $password = $_POST['password'];
+                $newPassword = $_POST['newPassword'];
+                $email = $_POST['email'];
+
+                try {
+                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
+                    $stmt->bindParam(':email', $email);
+        
+                    $stmt->execute();
+        
+                    if ($stmt->rowCount() > 0) {
+                        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        
+                        $key = base64_encode(generateKey($password, $results[0]['salt']));
+
+                        if ($key == $results[0]['password']) {
+
+                            $salt = generateSalt();
+                            $dbPassword = base64_encode(generateKey($newPassword, $salt));
+
+                            $stmt = $conn->prepare("UPDATE user SET salt=:salt, password=:dbPassword where email=:email");
+                            $stmt->bindParam(':email', $email);
+                            $stmt->bindParam(':salt', $salt);
+                            $stmt->bindParam(':dbPassword', $dbPassword);
+                            $stmt->execute();
+
+
+                            $response['status'] = 200;
+                            $response['error'] = false;
+                            $response['message'] = 'Password changed';
+                            $response['time'] = date("Y-m-d H:i:s");
+                        } else {
+                            $response['status'] = 400;
+                            $response['error'] = true;
+                            $response['message'] = 'Original password not right';
+                            $response['time'] = date("Y-m-d H:i:s");
+                        }
+                    } else {
+                        $response['status'] = 400;
+                        $response['error'] = true;
+                        $response['message'] = 'User Does Not Exist';
+                        $response['time'] = date("Y-m-d H:i:s");
+                    }
+                } catch (PDOException $e) {
+                    $response['status'] = 400;
+                    $response['error'] = true;
+                    $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
+                    $response['time'] = date("Y-m-d H:i:s");
+                } // catch ends
             } else {
                 $response['status'] = 400;
                 $response['error'] = true;
-                $response['message'] = 'Token is not valid';
+                $response['message'] = 'Required data missing';
                 $response['time'] = date("Y-m-d H:i:s");
             }
+        break;
 
-          } catch (PDOException $e) {
-            $response['status'] = 400;
-            $response['error'] = true;
-            $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
-            $response['time'] = date("Y-m-d H:i:s");
-          } // catch ends
-      } else {
-        $response['status'] = 400;
-        $response['error'] = true;
-        $response['message'] = 'Required data missing';
-        $response['time'] = date("Y-m-d H:i:s");
-      }
-      break;
+        case '/forgot-password':
 
-      case '/all-friends':
+            if (isTheseParametersAvailable(array('email'))) {
+                $email = $_POST['email'];
+    
+                try {
 
-        if (isTheseParametersAvailable(array('email', 'password'))) {
-            $email = $_POST['email'];
-            $password = $_POST['password'];
-
-            
-  
-            try {
-                $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
-                $stmt->bindParam(':email', $email);
-  
-                $stmt->execute();
-  
-                if ($stmt->rowCount() > 0) {
-                    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    
-                    $key = base64_encode(generateKey($password, $results[0]['salt']));
-
-                    if ($key == $results[0]['password']) {
-
-                        $users = array();
-
-                        $stmt = $conn->prepare("select first_name, last_name, email FROM user where email!=:email");
-                        $stmt->bindParam(':email', $email);
+                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
+                    $stmt->bindParam(':email', $email);
         
+                    $stmt->execute();
+        
+                    if ($stmt->rowCount() > 0) {
+
+                        $token = uniqid();
+                        $stmt = $conn->prepare("UPDATE user SET reset_token=:token where email=:email");
+                        $stmt->bindParam(':email', $email);
+                        $stmt->bindParam(':token', $token);
+            
                         $stmt->execute();
-                        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                        for ($x=0; $x<count($results); $x++) {
-                            $users[$x] = [
-                                "firstName" => $results[$x]['first_name'], 
-                                "lastName" => $results[$x]['last_name'],
-                                "email" => $results[$x]['email']
-                            ];
-                        }
 
+                        sendNewUserEmail($email, false, $token);
+                        
 
                         $response['status'] = 200;
                         $response['error'] = false;
-                        $response['message'] = 'Friends attached';
+                        $response['message'] = 'Reset password is sent';
                         $response['time'] = date("Y-m-d H:i:s");
-                        $response['usersAll'] = $users;
+                
                     } else {
                         $response['status'] = 400;
                         $response['error'] = true;
-                        $response['message'] = 'Login Failed';
+                        $response['message'] = 'User Does Not Exist';
                         $response['time'] = date("Y-m-d H:i:s");
                     }
-                } else {
+
+                } catch (PDOException $e) {
                     $response['status'] = 400;
                     $response['error'] = true;
-                    $response['message'] = 'User Does Not Exist';
+                    $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
                     $response['time'] = date("Y-m-d H:i:s");
-                }
-            }	// try ends
-            catch (PDOException $e) {
+                } // catch ends
+            } else {
                 $response['status'] = 400;
                 $response['error'] = true;
-                $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
+                $response['message'] = 'Email is required';
                 $response['time'] = date("Y-m-d H:i:s");
-            }	// catch ends
-        } 	// if all arguments are not present ends
-        else {
-            $response['status'] = 400;
-            $response['error'] = true;
-            $response['message'] = 'Email or Password missing';
-            $response['time'] = date("Y-m-d H:i:s");
-        }
+            }
+        break;
+
+        case '/reset-password':
+
+            if (isTheseParametersAvailable(array('token', 'password'))) {
+                $token = $_POST['token'];
+                $password = $_POST['password'];
+
+                try {
+
+                    $stmt = $conn->prepare("select id from user where reset_token=:token");
+                    $stmt->bindParam(':token', $token);
+
+                    $stmt->execute();
+                    if ($stmt->rowCount() > 0) {
+                        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                        $userID = $results[0]['id'];
+
+                        $salt = generateSalt();
+                        $dbPassword = base64_encode(generateKey($password, $salt));
+
+                        $stmt = $conn->prepare("UPDATE user SET salt=:salt, password=:dbPassword, reset_token=NULL where id=:userID");
+                        $stmt->bindParam(':salt', $salt);
+                        $stmt->bindParam(':dbPassword', $dbPassword);
+                        $stmt->bindParam(':userID', $userID);
+                        $stmt->execute();
+                        
+
+                        $response['status'] = 200;
+                        $response['error'] = false;
+                        $response['message'] = 'Password successfully reset';
+                        $response['time'] = date("Y-m-d H:i:s");
+
+                    } else {
+                        $response['status'] = 400;
+                        $response['error'] = true;
+                        $response['message'] = 'Token is not valid';
+                        $response['time'] = date("Y-m-d H:i:s");
+                    }
+
+                } catch (PDOException $e) {
+                    $response['status'] = 400;
+                    $response['error'] = true;
+                    $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
+                    $response['time'] = date("Y-m-d H:i:s");
+                } // catch ends
+            } else {
+                $response['status'] = 400;
+                $response['error'] = true;
+                $response['message'] = 'Required data missing';
+                $response['time'] = date("Y-m-d H:i:s");
+            }
+        break;
+
+        case '/all-friends':
+
+            if (isTheseParametersAvailable(array('email', 'password'))) {
+                $email = $_POST['email'];
+                $password = $_POST['password'];
+
+                
+    
+                try {
+                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
+                    $stmt->bindParam(':email', $email);
+    
+                    $stmt->execute();
+    
+                    if ($stmt->rowCount() > 0) {
+                        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        
+                        $key = base64_encode(generateKey($password, $results[0]['salt']));
+
+                        if ($key == $results[0]['password']) {
+
+                            $users = array();
+
+                            $stmt = $conn->prepare("select first_name, last_name, email FROM user where email!=:email");
+                            $stmt->bindParam(':email', $email);
+            
+                            $stmt->execute();
+                            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                            for ($x=0; $x<count($results); $x++) {
+                                $users[$x] = [
+                                    "firstName" => $results[$x]['first_name'], 
+                                    "lastName" => $results[$x]['last_name'],
+                                    "email" => $results[$x]['email']
+                                ];
+                            }
+
+
+                            $response['status'] = 200;
+                            $response['error'] = false;
+                            $response['message'] = 'Friends attached';
+                            $response['time'] = date("Y-m-d H:i:s");
+                            $response['usersAll'] = $users;
+                        } else {
+                            $response['status'] = 400;
+                            $response['error'] = true;
+                            $response['message'] = 'Login Failed';
+                            $response['time'] = date("Y-m-d H:i:s");
+                        }
+                    } else {
+                        $response['status'] = 400;
+                        $response['error'] = true;
+                        $response['message'] = 'User Does Not Exist';
+                        $response['time'] = date("Y-m-d H:i:s");
+                    }
+                }	// try ends
+                catch (PDOException $e) {
+                    $response['status'] = 400;
+                    $response['error'] = true;
+                    $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
+                    $response['time'] = date("Y-m-d H:i:s");
+                }	// catch ends
+            } 	// if all arguments are not present ends
+            else {
+                $response['status'] = 400;
+                $response['error'] = true;
+                $response['message'] = 'Email or Password missing';
+                $response['time'] = date("Y-m-d H:i:s");
+            }
         break;
 
 
@@ -381,13 +381,13 @@
                 $password = $_POST['password'];
 
                 
-      
+    
                 try {
                     $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
                     $stmt->bindParam(':email', $messageFromEmail);
-      
+    
                     $stmt->execute();
-      
+    
                     if ($stmt->rowCount() > 0) {
                         $dataSender = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         
@@ -396,9 +396,9 @@
                         if ($key == $dataSender[0]['password']) {
                             $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
                             $stmt->bindParam(':email', $messageToEmail);
-              
+            
                             $stmt->execute();
-              
+            
                             if ($stmt->rowCount() > 0) {
                                 $dataReceiver = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -460,113 +460,112 @@
                 $response['message'] = 'Required data missing';
                 $response['time'] = date("Y-m-d H:i:s");
             }
-            break;
+        break;
 
-            case '/messages-user-and-friend':
+        case '/messages-user-and-friend':
 
-                if (isTheseParametersAvailable(array('userEmail', 'friendEmail', 'password'))) {
-                    $userEmail = $_POST['userEmail'];
-                    $friendEmail = $_POST['friendEmail'];
-                    $password = $_POST['password'];
+            if (isTheseParametersAvailable(array('userEmail', 'friendEmail', 'password'))) {
+                $userEmail = $_POST['userEmail'];
+                $friendEmail = $_POST['friendEmail'];
+                $password = $_POST['password'];
+
+                
     
-                    
-          
-                    try {
-                        $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
-                        $stmt->bindParam(':email', $userEmail);
-          
-                        $stmt->execute();
-          
-                        if ($stmt->rowCount() > 0) {
-                            $dataSender = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                            
-                            $key = base64_encode(generateKey($password, $dataSender[0]['salt']));
+                try {
+                    $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
+                    $stmt->bindParam(':email', $userEmail);
     
-                            if ($key == $dataSender[0]['password']) {
-                                $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
-                                $stmt->bindParam(':email', $friendEmail);
-                  
+                    $stmt->execute();
+    
+                    if ($stmt->rowCount() > 0) {
+                        $dataSender = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        
+                        $key = base64_encode(generateKey($password, $dataSender[0]['salt']));
+
+                        if ($key == $dataSender[0]['password']) {
+                            $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
+                            $stmt->bindParam(':email', $friendEmail);
+            
+                            $stmt->execute();
+            
+                            if ($stmt->rowCount() > 0) {
+                                $dataReceiver = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                                # Sender credentials are correct and both sender and receiver exists
+                                $stmt = $conn->prepare("SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = :senderID and m.message_to_id = :receiverID) or (m.message_from_id = :receiverID and m.message_to_id = :senderID) order by m.sent_at");
+                                $stmt->bindParam(':senderID', $dataSender[0]['id']);
+                                $stmt->bindParam(':receiverID', $dataReceiver[0]['id']);
                                 $stmt->execute();
-                  
-                                if ($stmt->rowCount() > 0) {
-                                    $dataReceiver = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-                                    # Sender credentials are correct and both sender and receiver exists
-                                    $stmt = $conn->prepare("SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = :senderID and m.message_to_id = :receiverID) or (m.message_from_id = :receiverID and m.message_to_id = :senderID) order by m.sent_at");
-                                    $stmt->bindParam(':senderID', $dataSender[0]['id']);
-                                    $stmt->bindParam(':receiverID', $dataReceiver[0]['id']);
-                                    $stmt->execute();
-                                    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                                    $messages = array();
+                                $messages = array();
 
-                                    for ($x=0; $x<count($results); $x++) {
-                                        if ($results[$x]['message_from_id'] == $dataSender[0]['id'] && $results[$x]['message_to_id'] == $dataReceiver[0]['id']) {
-                                            $messages[$x] = [
-                                                "message" => $results[$x]['message'], 
-                                                "messageFromEmail" => $userEmail,
-                                                "messageToEmail" => $friendEmail,
-                                                "sentAt" => $results[$x]['sent_at']
-                                            ]; 
-                                        } else {
-                                            $messages[$x] = [
-                                                "message" => $results[$x]['message'], 
-                                                "messageFromEmail" => $friendEmail,
-                                                "messageToEmail" => $userEmail,
-                                                "sentAt" => $results[$x]['sent_at']
-                                            ]; 
-                                        }
+                                for ($x=0; $x<count($results); $x++) {
+                                    if ($results[$x]['message_from_id'] == $dataSender[0]['id'] && $results[$x]['message_to_id'] == $dataReceiver[0]['id']) {
+                                        $messages[$x] = [
+                                            "message" => $results[$x]['message'], 
+                                            "messageFromEmail" => $userEmail,
+                                            "messageToEmail" => $friendEmail,
+                                            "sentAt" => $results[$x]['sent_at']
+                                        ]; 
+                                    } else {
+                                        $messages[$x] = [
+                                            "message" => $results[$x]['message'], 
+                                            "messageFromEmail" => $friendEmail,
+                                            "messageToEmail" => $userEmail,
+                                            "sentAt" => $results[$x]['sent_at']
+                                        ]; 
                                     }
-    
-                                    $response['status'] = 200;
-                                    $response['error'] = false;
-                                    $response['message'] = 'Messages attached';
-                                    $response['time'] = date("Y-m-d H:i:s");
-                                    $response['usersAll'] = $messages;
-    
-                                } else {
-                                    $response['status'] = 400;
-                                    $response['error'] = true;
-                                    $response['message'] = 'Receiver Does Not Exist';
-                                    $response['time'] = date("Y-m-d H:i:s");
                                 }
+
+                                $response['status'] = 200;
+                                $response['error'] = false;
+                                $response['message'] = 'Messages attached';
+                                $response['time'] = date("Y-m-d H:i:s");
+                                $response['usersAll'] = $messages;
+
                             } else {
                                 $response['status'] = 400;
                                 $response['error'] = true;
-                                $response['message'] = 'Login Failed';
+                                $response['message'] = 'Receiver Does Not Exist';
                                 $response['time'] = date("Y-m-d H:i:s");
                             }
                         } else {
                             $response['status'] = 400;
                             $response['error'] = true;
-                            $response['message'] = 'Sender Does Not Exist';
+                            $response['message'] = 'Login Failed';
                             $response['time'] = date("Y-m-d H:i:s");
                         }
-                    }	// try ends
-                    catch (PDOException $e) {
+                    } else {
                         $response['status'] = 400;
                         $response['error'] = true;
-                        $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
+                        $response['message'] = 'Sender Does Not Exist';
                         $response['time'] = date("Y-m-d H:i:s");
-                    }	// catch ends
-                } 	// if all arguments are not present ends
-                else {
+                    }
+                }	// try ends
+                catch (PDOException $e) {
                     $response['status'] = 400;
                     $response['error'] = true;
-                    $response['message'] = 'Required data missing';
+                    $response['message'] = 'Error Occured, Please contact Admin, Error:'.$e;
                     $response['time'] = date("Y-m-d H:i:s");
-                }
-                break;
-    
-      default:
-        $response['error'] = true;
-        $response['message'] = 'Invalid Operation Called';
-      }
+                }	// catch ends
+            } 	// if all arguments are not present ends
+            else {
+                $response['status'] = 400;
+                $response['error'] = true;
+                $response['message'] = 'Required data missing';
+                $response['time'] = date("Y-m-d H:i:s");
+            }
+        break;
+
+        default:
+            $response['error'] = true;
+            $response['message'] = 'Invalid Operation Called';
+    }
 
     echo json_encode($response);
 
-    function isTheseParametersAvailable($params)
-    {
+    function isTheseParametersAvailable($params) {
         foreach ($params as $param) {
             if (!isset($_POST[$param])) {
                 return false;
@@ -631,4 +630,3 @@
         $smtp = Mail::factory('smtp', array ('host' => $host, 'port' => $port, 'auth' => true, 'username' => $username, 'password' => $password));
         $mail = $smtp->send($to, $headers, $email_body);
     }
-?>
