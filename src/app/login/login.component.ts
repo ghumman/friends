@@ -11,11 +11,15 @@ export class LoginComponent implements OnInit {
 
   form;
   errorMessage;
+  email;
+  password;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private formBuilder: FormBuilder) {
+      this.email = localStorage.getItem('email');
+      this.password = localStorage.getItem('password');
       this.form = this.formBuilder.group({
         email: '',
         password: ''
@@ -24,6 +28,11 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     this.errorMessage = null;
+
+    if (this.email !== null && this.password !== null) {
+      this.router.navigateByUrl('/profile');
+    }
+
   }
 
   goToRegister(event: Event) {
@@ -31,15 +40,9 @@ export class LoginComponent implements OnInit {
     this.router.navigate(['register', { id: "test data from login" }]);
   }
 
-  onUsernameClicked() {
-    console.log('You clicked username');
-  }
-
   onSubmit(customerData) {
     this.form.reset();
 
-    console.log('email: ', customerData.email);
-    console.log('password: ', customerData.password);
 
     const that = this;
 

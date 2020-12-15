@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { Router, ActivatedRoute, ParamMap, NavigationStart } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormBuilder } from '@angular/forms';
 
 import { filter } from 'rxjs/operators';
@@ -23,22 +23,27 @@ export class ProfileComponent implements OnInit {
     private formBuilder: FormBuilder
   ) { 
 
-  this.form = this.formBuilder.group({
-    toEmail: '',
-    toMessage: ''
-  })
-  
+    this.form = this.formBuilder.group({
+      toEmail: '',
+      toMessage: ''
+    })
+    
 
-  // this.email = window.history.state.email;
-  // this.password = window.history.state.password;
+    // this.email = window.history.state.email;
+    // this.password = window.history.state.password;
 
-  this.email = localStorage.getItem('email');
-  this.password = localStorage.getItem('password');
+    this.email = localStorage.getItem('email');
+    this.password = localStorage.getItem('password');
 
   this.errorMessage = null;
   }
 
   ngOnInit(): void {
+
+    // if not logged-in, go to login page
+    if (this.email === null || this.password === null) {
+      this.router.navigateByUrl('/');
+    }
 
 
     const that = this;
@@ -69,11 +74,15 @@ export class ProfileComponent implements OnInit {
 
   signMeOut() {
 
+    // reset email and password from local storage
+    localStorage.removeItem("email");
+    localStorage.removeItem("password");
+
     this.router.navigateByUrl('/');
+
   }
 
   changePassword() {
-    // console.log('change password');
     this.router.navigateByUrl('/change');
   }
 
