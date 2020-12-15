@@ -1,0 +1,48 @@
+{{errorMessage}}
+<div>
+  <button (click)="signMeOut()">SIGN OUT</button>
+</div>
+<button (click)="changePassword()">CHANGE PASSWORD</button>
+
+<p>Friends</p>
+<p>Hi {{email}}</p>
+
+<p>
+  Send Message
+  </p>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
+ 
+    <div>
+      <label for="toEmail">
+         Email
+      </label>
+      <input id="toEmail" type="email" formControlName="toEmail">
+    </div>
+  
+    <div>
+      <label for="toMessage">
+        Message
+      </label>
+      <input id="toMessage" type="text" formControlName="toMessage">
+    </div>
+  
+    <button class="button" type="submit">SEND</button>
+  
+  </form>
+
+  <li *ngFor="let user of usersAll"
+    [class.selected]="user === selectedUser"
+    (click)="onSelect(user)">
+    <span class="badge">{{user.email}}</span> {{user.firstName}} {{user.lastName}}
+  </li>
+
+  <li *ngFor="let msg of msgsAll">
+    <div>From: {{msg.messageFromEmail}}    To: {{msg.messageToEmail}}</div>
+    <div>
+      {{msg.message}}
+    </div>
+    <div>
+      {{msg.sentAt}}
+    </div>
+</li>

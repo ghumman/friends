@@ -1,3 +1,22 @@
+```
+git init
+git remote add angular git@github.com:ghumman/friends.git
+git add .
+git commit -m "Initial commit"
+git push angular master:angular
+```
+
+## Run Project
+`ng serve` or `ng serve --open` to run the app and open the browser 
+
+## Create Component
+```
+ng generate component Login
+```
+
+//////////////////////////////////////////////////
+//  Auto Generated
+//////////////////////////////////////////////////
 # Angular
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 11.0.3.
