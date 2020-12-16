@@ -1,1 +1,21 @@
-<p>forgot works!</p>
+<h2>Friends</h2>
+<h3>Forgot Password</h3>
+ 
+ <form [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
+
+   <div>
+    <label for="email">
+       Email
+    </label>
+    <input id="email" type="email" formControlName="email">
+  </div>
+
+   <button class="button" type="submit">FORGOT</button>
+ 
+ </form>
+ <button (click)="goToLogin()">Cancel</button>
+
+ <div>
+ {{errorMessage}}
+ </div>
+
