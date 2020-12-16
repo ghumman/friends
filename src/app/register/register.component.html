@@ -1,1 +1,50 @@
-<p>register works!</p>
+<h2>Friends</h2>
+<h3>We are glad you are going to become Friends User</h3>
+<h3>Please Register</h3>
+ 
+ <form [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
+ 
+   <div>
+     <label for="firstName">
+        First Name
+     </label>
+     <input id="firstName" type="text" formControlName="firstName">
+   </div>
+ 
+   <div>
+     <label for="lastName">
+       Last Name
+     </label>
+     <input id="lastName" type="text" formControlName="lastName">
+   </div>
+
+   <div>
+    <label for="email">
+       Email
+    </label>
+    <input id="email" type="email" formControlName="email">
+  </div>
+
+  <div>
+    <label for="password">
+      Password
+    </label>
+    <input id="password" type="password" formControlName="password">
+  </div>
+
+  <div>
+    <label for="passwordConfirm">
+      Password (again)
+    </label>
+    <input id="passwordConfirm" type="password" formControlName="passwordConfirm">
+  </div>
+
+   <button class="button" type="submit">Register</button>
+ 
+ </form>
+ <button (click)="goToLogin()">Cancel</button>
+
+ <div>
+ {{errorMessage}}
+ </div>
+

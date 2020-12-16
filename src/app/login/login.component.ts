@@ -35,9 +35,12 @@ export class LoginComponent implements OnInit {
 
   }
 
-  goToRegister(event: Event) {
-    console.log('Click!', event)
-    this.router.navigate(['register', { id: "test data from login" }]);
+  goToRegister() {
+    this.router.navigate(['register']);
+  }
+
+  goToForgot() {
+    this.router.navigate(['forgot']);
   }
 
   onSubmit(customerData) {

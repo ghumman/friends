@@ -1,4 +1,5 @@
-<h3>Login</h3>
+<h2>Friends</h2>
+<h3>Please Login</h3>
  
  <form [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
  
@@ -19,6 +20,8 @@
    <button class="button" type="submit">Login</button>
  
  </form>
+ <button (click)="goToRegister()">Register</button>
+ <button (click)="goToForgot()">Need help?</button>
 
  {{errorMessage}}
 
