@@ -59,7 +59,7 @@
 <script>
 
 export default {
-  name: 'Login',
+  name: 'Profile',
     data() {
         return {
             email: '',
@@ -72,8 +72,6 @@ export default {
         }
     },
     mounted: function () {
-
-        console.log("inside mounted")
 
         this.email = localStorage.getItem('email')
         this.password = localStorage.getItem('password')
