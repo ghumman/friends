@@ -79,8 +79,8 @@ export default {
         if (data.message === "Logged In") {
 
 
-          localStorage.email = that.email;
-          localStorage.password = that.password;
+          localStorage.setItem('email', that.email);
+          localStorage.setItem('password', that.password);
 
           that.$router.push('/profile')
         } else {
