@@ -77,6 +77,13 @@ export default {
 
       e.preventDefault();
 
+      if (this.email == null || this.password == null) {
+        
+        this.errorMessage = "All fields are required. Please fill all of them.";
+        return;
+
+      }
+
       this.firstName = this.firstName.trim();
       this.lastName = this.lastName.trim();
       this.email = this.email.trim();
