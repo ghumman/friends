@@ -23,7 +23,7 @@ https://myaccount.google.com/lesssecureapps
 - [Install Java](https://linuxhint.com/install_jdk_14_ubuntu/)
 
 3. Used following guide to install mongo locally and create database named "friends_mongo" with no credentials
-- [Install Mysql Locally](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/)
+- [Install MongoDB Locally](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/)
 
 4. Based on your JAVA installed version update pom.xml at the following line
 ```
