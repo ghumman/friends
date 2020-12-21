@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -167,6 +166,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var result User
+	resp := UserResponse{}
 	err = userCollection.FindOne(context.TODO(), bson.D{{"email", values.Get("email")}}).Decode(&result)
 
 	var login bool = false
@@ -187,8 +187,6 @@ func login(w http.ResponseWriter, r *http.Request) {
 			loginCredentialsFailed = true
 		}
 	}
-
-	resp := UserResponse{}
 
 	if login {
 		resp.Message = "Logged In"
@@ -247,11 +245,12 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write(js)
 	} else if values.Get("authType") == "regular" {
-		// result, err := db.Query("SELECT id, password, salt, token FROM user where email=?", values.Get("email"))
 		var result User
 		err = userCollection.FindOne(context.TODO(), bson.D{{"email", values.Get("email")}}).Decode(&result)
 		if err != nil {
-			panic(err.Error())
+			resp.Message = "User Does Not Exist"
+			resp.Err = true
+			resp.Status = 400
 		}
 
 		if result.Email == "" {
@@ -265,7 +264,6 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 				salt := createSalt()
 				hash := createHash(values.Get("newPassword"), salt)
 
-				// _, err := userCollection.UpdateByID(context.TODO(), result.ID, bson.M{"firstName": result.FirstName, "lastName": result.LastName, "createdAt": result.CreatedAt, "salt": result.Salt, "password": result.Password, "email": result.Email, "authType": result.AuthType, "token": result.Token, "resetToken": result.ResetToken})
 				_, err := userCollection.UpdateByID(context.TODO(), result.ID, bson.D{{"$set", bson.M{"salt": salt, "password": hash}}})
 				if err != nil {
 					log.Fatal(err)
@@ -319,7 +317,7 @@ func forgotPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := UserResponse{}
-	var tempAuthType, tempID int64
+	// var tempAuthType, tempID int64
 
 	if values.Get("email") == "" {
 		resp.Message = "Email is required"
@@ -335,37 +333,31 @@ func forgotPassword(w http.ResponseWriter, r *http.Request) {
 		w.Write(js)
 		return
 	} else {
-		result, err := db.Query("SELECT id, auth_type FROM user where email=?", values.Get("email"))
+		// result, err := db.Query("SELECT id, auth_type FROM user where email=?", values.Get("email"))
+		var result User
+		err = userCollection.FindOne(context.TODO(), bson.D{{"email", values.Get("email")}}).Decode(&result)
 		if err != nil {
-			panic(err.Error())
-		}
-
-		defer result.Close()
-
-		var count int = 0
-
-		for result.Next() {
-
-			result.Scan(&tempID, &tempAuthType)
-			count = count + 1
-		}
-
-		if count == 0 || tempAuthType == 1 {
 			resp.Message = "No account or logged in using social media"
 			resp.Err = true
 			resp.Status = 400
-		} else if count == 1 {
+		}
 
+		// defer result.Close()
+
+		if result.Email == "" {
+			resp.Message = "No account or logged in using social media"
+			resp.Err = true
+			resp.Status = 400
+		} else {
 			uuid := uuid.New()
 
-			updateUserQuery, err := db.Query("UPDATE `user` SET reset_token=? where id=?", uuid.String(), tempID)
+			_, err := userCollection.UpdateByID(context.TODO(), result.ID, bson.D{{"$set", bson.M{"resetToken": uuid.String()}}})
 			if err != nil {
-				panic(err.Error())
+				log.Fatal(err)
 			}
-			defer updateUserQuery.Close()
 
 			// send email
-			sendEmail(values.Get("email"), false, uuid.String())
+			// sendEmail(values.Get("email"), false, uuid.String())
 			resp.Message = "Reset password is sent"
 			resp.Err = false
 			resp.Status = 200
@@ -398,20 +390,15 @@ func resetPassword(w http.ResponseWriter, r *http.Request) {
 
 	resp := UserResponse{}
 
-	var tempID sql.NullInt64
-
-	// Test if the user already exists
-	result, err := db.Query("SELECT id FROM user where reset_token=?", values.Get("token"))
+	var result User
+	err = userCollection.FindOne(context.TODO(), bson.D{{"resetToken", values.Get("token")}}).Decode(&result)
 	if err != nil {
-		panic(err.Error())
+		resp.Message = "Token is not valid"
+		resp.Err = true
+		resp.Status = 400
 	}
-	defer result.Close()
-	var count int = 0
-	for result.Next() {
-		result.Scan(&tempID)
-		count = count + 1
-	}
-	if count == 0 { // user already exists
+
+	if result.ResetToken == "" {
 		resp.Message = "Token is not valid"
 		resp.Status = 400
 		resp.Err = true
@@ -423,31 +410,18 @@ func resetPassword(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write(js)
 		return
-	} else if count == 1 { // update password
-
+	} else {
 		salt := createSalt()
 		hash := createHash(values.Get("password"), salt)
 
-		updateUserQuery, err := db.Query("UPDATE `user` SET salt=?, password=?, reset_token=? where id=?", salt, hash, nil, tempID)
+		_, err := userCollection.UpdateByID(context.TODO(), result.ID, bson.D{{"$set", bson.M{"salt": salt, "password": hash, "resetToken": nil}}})
 		if err != nil {
-			panic(err.Error())
+			log.Fatal(err)
 		}
-		defer updateUserQuery.Close()
 
 		resp.Message = "Password successfully reset"
 		resp.Status = 200
 		resp.Err = false
-		resp.Time = time.Now().String()
-		js, err := json.Marshal(resp)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Write(js)
-	} else {
-		resp.Message = "Multiple users found against this reset token"
-		resp.Status = 400
-		resp.Err = true
 		resp.Time = time.Now().String()
 		js, err := json.Marshal(resp)
 		if err != nil {
@@ -472,68 +446,50 @@ func allFriends(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := db.Query("SELECT password, salt, token FROM user where email=?", values.Get("email"))
-	if err != nil {
-		panic(err.Error())
-	}
-
-	defer result.Close()
-
-	var count int = 0
-
-	var login bool = false
-	var loginCredentialsFailed bool = false
-	var tempPassword, tempSalt, tempToken sql.NullString
-
+	var result User
+	login := false
+	loginCredentialsFailed := false
 	resp := UserResponse{}
 
-	for result.Next() {
+	err = userCollection.FindOne(context.TODO(), bson.D{{"email", values.Get("email")}}).Decode(&result)
 
-		if count > 1 {
-			login = false
-			break
+	if values.Get("authType") == "regular" {
+
+		login = checkCredentials(values.Get("password"), result.Salt, result.Password)
+		if login == false {
+			loginCredentialsFailed = true
 		} else {
 
-			result.Scan(&tempPassword, &tempSalt, &tempToken)
-
-			if values.Get("authType") == "regular" {
-
-				login = checkCredentials(values.Get("password"), tempSalt.String, tempPassword.String)
-				if login == false {
-					loginCredentialsFailed = true
-				} else {
-					resultFriends, err := db.Query("SELECT first_name, last_name, email FROM user where email!=?", values.Get("email"))
-					if err != nil {
-						panic(err.Error())
-					}
-
-					defer resultFriends.Close()
-
-					var tempFirstName, tempLastName, tempEmail sql.NullString
-
-					for resultFriends.Next() {
-
-						resultFriends.Scan(&tempFirstName, &tempLastName, &tempEmail)
-
-						userData := UsersAll{
-							tempFirstName.String,
-							tempLastName.String,
-							tempEmail.String,
-						}
-						resp.Users = append(resp.Users, userData)
-					}
+			cur, err := userCollection.Find(context.Background(), bson.D{})
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer cur.Close(context.Background())
+			for cur.Next(context.Background()) {
+				var currentResult User
+				err := cur.Decode(&currentResult)
+				if err != nil {
+					log.Fatal(err)
 				}
-				count = count + 1
-			} else if values.Get("authType") == "special" {
-				// account is setup using OAuth
-				if values.Get("token") == tempToken.String {
-					login = true
 
-				} else {
-					login = false
-					loginCredentialsFailed = true
+				if currentResult.Email != values.Get("email") {
+					userData := UsersAll{
+						currentResult.FirstName,
+						currentResult.LastName,
+						currentResult.Email,
+					}
+					resp.Users = append(resp.Users, userData)
 				}
 			}
+		}
+	} else if values.Get("authType") == "special" {
+		// account is setup using OAuth
+		if values.Get("token") == result.Token {
+			login = true
+
+		} else {
+			login = false
+			loginCredentialsFailed = true
 		}
 	}
 
