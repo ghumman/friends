@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func addUser(w http.ResponseWriter, r *http.Request) {
@@ -82,17 +85,10 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 		w.Write(js)
 	} else { // The request is valid and required data is present
 
-		// Test if the user already exists
-		result, err := db.Query("SELECT password, salt, token FROM user where email=?", values.Get("email"))
-		if err != nil {
-			panic(err.Error())
-		}
-		defer result.Close()
-		var count int = 0
-		for result.Next() {
-			count = count + 1
-		}
-		if count > 0 { // user already exists
+		var result User
+		err = userCollection.FindOne(context.TODO(), bson.D{{"email", values.Get("email")}}).Decode(&result)
+
+		if result.Email != "" {
 			resp.Message = "User Already Exists"
 			resp.Status = 400
 			resp.Err = true
@@ -105,23 +101,6 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 			w.Write(js)
 		} else { // create new user
 
-			// get last ID as unfortuntely Spring Boot didn't create table with id being auto_increment
-			lastIDQuery, err := db.Query("SELECT id FROM user ORDER BY id DESC LIMIT 1")
-			if err != nil {
-				panic(err.Error())
-			}
-			defer lastIDQuery.Close()
-			var lastID int = 0
-			for lastIDQuery.Next() {
-				lastIDQuery.Scan(&lastID)
-			}
-			var newID int
-			if lastID == 0 {
-				newID = 1
-			} else {
-				newID = lastID + 1
-			}
-
 			// create new salt and new hash
 			salt := createSalt()
 			hash := createHash(values.Get("password"), salt)
@@ -130,12 +109,11 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 			if values.Get("authType") == "regular" {
 
 				// now we have newID, salt and hash, and we can creat new user
-				createUserQuery, err := db.Query("INSERT INTO `user` (`id`, `auth_type`, `created_at`, `email`,`first_name`, `last_name`, `password`, `salt`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-					newID, 0, time.Now(), values.Get("email"), values.Get("firstName"), values.Get("lastName"), hash, salt)
+
+				_, err := userCollection.InsertOne(context.TODO(), bson.M{"firstName": values.Get("firstName"), "lastName": values.Get("lastName"), "createdAt": time.Now(), "salt": salt, "password": hash, "email": values.Get("email"), "authType": 0})
 				if err != nil {
-					panic(err.Error())
+					log.Fatal(err)
 				}
-				defer createUserQuery.Close()
 
 				resp.Message = "User Created"
 				resp.Status = 200
@@ -147,16 +125,16 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				w.Write(js)
-				sendEmail(values.Get("email"), true, "")
+				// sendEmail(values.Get("email"), true, "")
 
 			} else { // else if creating account using OAuth
 				// now we have newID, salt and hash, and we can creat new user
-				createUserQuery, err := db.Query("INSERT INTO `user` (`id`, `auth_type`, `created_at`, `email`,`first_name`, `last_name`, `token`) VALUES (?, ?, ?, ?, ?, ?, ?)",
-					newID, 1, time.Now(), values.Get("email"), values.Get("firstName"), values.Get("lastName"), values.Get("token"))
+
+				_, err := userCollection.InsertOne(context.TODO(), bson.M{"firstName": values.Get("firstName"), "lastName": values.Get("lastName"), "createdAt": time.Now(), "salt": salt, "password": hash, "email": values.Get("email"), "authType": 0})
+
 				if err != nil {
-					panic(err.Error())
+					log.Fatal(err)
 				}
-				defer createUserQuery.Close()
 
 				resp.Message = "User Created"
 				resp.Status = 200
@@ -168,7 +146,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				w.Write(js)
-				sendEmail(values.Get("email"), true, "")
+				// sendEmail(values.Get("email"), true, "")
 			} // else if creating account using OAuth ends
 		} // create new user ends
 	} // The request is valid and required data is present ends
@@ -188,44 +166,25 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := db.Query("SELECT password, salt, token FROM user where email=?", values.Get("email"))
-	if err != nil {
-		panic(err.Error())
-	}
-
-	defer result.Close()
-
-	var count int = 0
+	var result User
+	err = userCollection.FindOne(context.TODO(), bson.D{{"email", values.Get("email")}}).Decode(&result)
 
 	var login bool = false
 	var loginCredentialsFailed bool = false
-	var tempPassword, tempSalt, tempToken sql.NullString
 
-	for result.Next() {
+	if values.Get("authType") == "regular" {
 
-		if count > 1 {
-			login = false
-			break
+		login = checkCredentials(values.Get("password"), result.Salt, result.Password)
+		if login == false {
+			loginCredentialsFailed = true
+		}
+	} else if values.Get("authType") == "special" {
+		// account is setup using OAuth
+		if values.Get("token") == result.Token {
+			login = true
 		} else {
-
-			result.Scan(&tempPassword, &tempSalt, &tempToken)
-
-			if values.Get("authType") == "regular" {
-
-				login = checkCredentials(values.Get("password"), tempSalt.String, tempPassword.String)
-				if login == false {
-					loginCredentialsFailed = true
-				}
-				count = count + 1
-			} else if values.Get("authType") == "special" {
-				// account is setup using OAuth
-				if values.Get("token") == tempToken.String {
-					login = true
-				} else {
-					login = false
-					loginCredentialsFailed = true
-				}
-			}
+			login = false
+			loginCredentialsFailed = true
 		}
 	}
 
