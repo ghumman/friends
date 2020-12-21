@@ -233,8 +233,6 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := UserResponse{}
-	var tempPassword, tempSalt, tempToken sql.NullString
-	var tempID sql.NullInt64
 
 	if values.Get("authType") == "special" {
 		resp.Message = "Logged in using OAuth"
@@ -249,55 +247,38 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write(js)
 	} else if values.Get("authType") == "regular" {
-		result, err := db.Query("SELECT id, password, salt, token FROM user where email=?", values.Get("email"))
+		// result, err := db.Query("SELECT id, password, salt, token FROM user where email=?", values.Get("email"))
+		var result User
+		err = userCollection.FindOne(context.TODO(), bson.D{{"email", values.Get("email")}}).Decode(&result)
 		if err != nil {
 			panic(err.Error())
 		}
 
-		defer result.Close()
-
-		var count int = 0
-
-		var login bool = false
-
-		for result.Next() {
-
-			if count > 1 {
-				login = false
-				break
-			} else {
-
-				result.Scan(&tempID, &tempPassword, &tempSalt, &tempToken)
-
-				login = checkCredentials(values.Get("password"), tempSalt.String, tempPassword.String)
-				count = count + 1
-
-			}
-		}
-
-		if count == 0 {
+		if result.Email == "" {
 			resp.Message = "User Does Not Exist"
 			resp.Err = true
 			resp.Status = 400
-		} else if login {
-
-			// create new salt and new hash
-			salt := createSalt()
-			hash := createHash(values.Get("newPassword"), salt)
-
-			updateUserQuery, err := db.Query("UPDATE `user` SET salt=?, password=? where id=?", salt, hash, tempID)
-			if err != nil {
-				panic(err.Error())
-			}
-			defer updateUserQuery.Close()
-
-			resp.Message = "Password changed"
-			resp.Err = false
-			resp.Status = 200
 		} else {
-			resp.Message = "Original password not right"
-			resp.Err = true
-			resp.Status = 400
+			login := checkCredentials(values.Get("password"), result.Salt, result.Password)
+			if login {
+				// create new salt and new hash
+				salt := createSalt()
+				hash := createHash(values.Get("newPassword"), salt)
+
+				// _, err := userCollection.UpdateByID(context.TODO(), result.ID, bson.M{"firstName": result.FirstName, "lastName": result.LastName, "createdAt": result.CreatedAt, "salt": result.Salt, "password": result.Password, "email": result.Email, "authType": result.AuthType, "token": result.Token, "resetToken": result.ResetToken})
+				_, err := userCollection.UpdateByID(context.TODO(), result.ID, bson.D{{"$set", bson.M{"salt": salt, "password": hash}}})
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				resp.Message = "Password changed"
+				resp.Err = false
+				resp.Status = 200
+			} else {
+				resp.Message = "Original password not right"
+				resp.Err = true
+				resp.Status = 400
+			}
 		}
 
 		resp.Time = time.Now().String()
