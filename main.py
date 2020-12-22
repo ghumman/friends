@@ -102,10 +102,8 @@ def changePassword():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt from user where email=%s")
-    data = (email)
-    cursor.execute(stmt, data)
-    data = cursor.fetchone()
+
+    data = userCollection.find_one({"email" : email})
 
     if data is None: 
         resp = {'status': 400, 
@@ -114,15 +112,16 @@ def changePassword():
         'time': datetime.datetime.now()} 
         return resp
     
-    key = generateKey(password, data[1])
+    key = generateKey(password, data["salt"])
     # check if new created hashed key equals to password saved in database
-    if base64.b64encode(key).decode("utf-8") == data[0]:
+    if base64.b64encode(key).decode("utf-8") == data["password"]:
         salt = generateSalt()
         dbPassword = base64.b64encode(generateKey(newPassword, salt)).decode("utf-8") 
-        stmt = ("UPDATE user SET salt=%s, password=%s where email=%s")
-        data = (salt, dbPassword, email)
-        cursor.execute(stmt, data)
-        conn.commit()
+
+        query = { "email": email }
+        newValues = { "$set": { "salt": salt, "password": dbPassword } }
+
+        userCollection.update_one(query, newValues)
         
         resp = {'status': 200, 'error': False, 'message': 'Password changed', 'time': datetime.datetime.now()} 
         return resp
@@ -138,10 +137,8 @@ def forgotPassword():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Email is required', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt from user where email=%s")
-    data = (email)
-    cursor.execute(stmt, data)
-    data = cursor.fetchone()
+
+    data = userCollection.find_one({"email" : email})
 
     if data is None: 
         resp = {'status': 400, 
@@ -151,12 +148,13 @@ def forgotPassword():
         return resp
 
     uuidNumber = uuid.uuid4()
-    stmt = ("UPDATE user SET reset_token=%s where email=%s")
-    data = (str(uuidNumber), email)
-    cursor.execute(stmt, data)
-    conn.commit()
 
-    sendNewUserEmail(email, False, str(uuidNumber))
+    query = { "email": email }
+    newValues = { "$set": { "resetToken": str(uuidNumber)} }
+
+    userCollection.update_one(query, newValues)
+
+    # sendNewUserEmail(email, False, str(uuidNumber))
     
     resp = {'status': 200, 'error': False, 'message': 'Reset password is sent', 'time': datetime.datetime.now()} 
     return resp
@@ -170,10 +168,8 @@ def resetPassword():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select id from user where reset_token=%s")
-    data = (token)
-    cursor.execute(stmt, data)
-    data = cursor.fetchone()
+
+    data = userCollection.find_one({"resetToken" : token})
 
     if data is None: 
         resp = {'status': 400, 
@@ -181,14 +177,15 @@ def resetPassword():
         'message': 'Token is not valid', 
         'time': datetime.datetime.now()} 
         return resp
-    userID = data[0]
 
     salt = generateSalt()
     dbPassword = base64.b64encode(generateKey(password, salt)).decode("utf-8") 
-    stmt = ("UPDATE user SET salt=%s, password=%s, reset_token=%s where id=%s")
-    data = (salt, dbPassword, None, userID)
-    cursor.execute(stmt, data)
-    conn.commit()
+
+    query = { "email": data["email"] }
+    newValues = { "$set": { "salt": salt, "password": dbPassword, "resetToken": None } }
+
+    userCollection.update_one(query, newValues)
+
     
     resp = {'status': 200, 'error': False, 'message': 'Password successfully reset', 'time': datetime.datetime.now()} 
     return resp
@@ -202,10 +199,8 @@ def allFriends():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Email or Password missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt from user where email=%s")
-    data = (email)
-    cursor.execute(stmt, data)
-    data = cursor.fetchone()
+
+    data = userCollection.find_one({"email" : email})
 
     if data is None: 
         resp = {'status': 400, 
@@ -214,16 +209,15 @@ def allFriends():
         'time': datetime.datetime.now()} 
         return resp
     
-    key = generateKey(password, data[1])
+    key = generateKey(password, data["salt"])
     # check if new created hashed key equals to password saved in database
-    if base64.b64encode(key).decode("utf-8") == data[0]:
-        stmt = ("select first_name, last_name, email FROM user where email!=%s")
-        data = (email)
-        cursor.execute(stmt, data)
-        rows = cursor.fetchall()
+    if base64.b64encode(key).decode("utf-8") == data["password"]:
+
+        friends = userCollection.find({"email" : {"$ne": email}})
+
         users = []
-        for r in rows: 
-            users.append({"firstName" : r[0], "lastName" : r[1], "email" : r[2]})
+        for friend in friends: 
+            users.append({"firstName" : friend['firstName'], "lastName" : friend['lastName'], "email" : friend['email']})
 
         resp = {'status': 200, 'error': False, 'message': 'Friends attached', 'time': datetime.datetime.now(), 'usersAll': users} 
         return resp
