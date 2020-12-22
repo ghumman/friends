@@ -1,10 +1,10 @@
 ```
 git init
-git remote add python git@github.com:ghumman/friends.git
+git remote add python-mongo git@github.com:ghumman/friends.git
 touch README.md
 git add README.md
 git commit -m "Initial commit"
-git push python master:python
+git push python-mongo master:python-mongo
 ```
 
 ## Installing Django
@@ -36,7 +36,6 @@ python manage.py startapp friends_app
 ## Installing Flask and Libraries
 ```
 pip install Flask
-pip install flask-mysql
 
 ```
 
