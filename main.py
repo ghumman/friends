@@ -3,7 +3,6 @@ from flask import request
 import datetime
 import pymongo
 
-from flaskext.mysql import MySQL
 from hashlib import pbkdf2_hmac
 import binascii
 import base64
@@ -15,21 +14,11 @@ import uuid
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
 
-mysql = MySQL()
-app.config['MYSQL_DATABASE_USER'] = 'ghumman'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'ghumman'
-app.config['MYSQL_DATABASE_DB'] = 'friends_mysql'
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
-mysql.init_app(app)
-
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
 mydb = myclient["friends_mongo"]
 userCollection = mydb["user"]
 messageCollection = mydb["message"]
 
-
-conn = mysql.connect()
-cursor =conn.cursor()
 
 @app.route('/add-user', methods=['POST'])
 def addUser():
@@ -236,10 +225,9 @@ def sendMessage():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt, id from user where email=%s")
-    data = (messageFromEmail)
-    cursor.execute(stmt, data)
-    dataSender = cursor.fetchone()
+
+    dataSender = userCollection.find_one({"email" : messageFromEmail})
+
 
     if dataSender is None: 
         resp = {'status': 400, 
@@ -248,15 +236,11 @@ def sendMessage():
         'time': datetime.datetime.now()} 
         return resp
     
-    key = generateKey(password, dataSender[1])
+    key = generateKey(password, dataSender["salt"])
     # check if new created hashed key equals to password saved in database
-    if base64.b64encode(key).decode("utf-8") == dataSender[0]:
+    if base64.b64encode(key).decode("utf-8") == dataSender["password"]:
 
-        # Check if receiver exists
-        stmt = ("select password, salt, id from user where email=%s")
-        data = (messageToEmail)
-        cursor.execute(stmt, data)
-        dataReceiver = cursor.fetchone()
+        dataReceiver = userCollection.find_one({"email" : messageToEmail})
 
         if dataReceiver is None: 
             resp = {'status': 400, 
@@ -266,7 +250,7 @@ def sendMessage():
             return resp
 
         # Sender credentials are correct and both sender and receiver exists
-        saveMessage(message, dataSender[2], dataReceiver[2])
+        saveMessage(message, dataSender, dataReceiver)
 
         resp = {'status': 200, 'error': False, 'message': 'Message sent', 'time': datetime.datetime.now()} 
         return resp
@@ -284,10 +268,8 @@ def messagesUserAndFriend():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt, id from user where email=%s")
-    data = (userEmail)
-    cursor.execute(stmt, data)
-    dataSender = cursor.fetchone()
+
+    dataSender = userCollection.find_one({"email" : userEmail})
 
     if dataSender is None: 
         resp = {'status': 400, 
@@ -296,15 +278,12 @@ def messagesUserAndFriend():
         'time': datetime.datetime.now()} 
         return resp
     
-    key = generateKey(password, dataSender[1])
+    key = generateKey(password, dataSender["salt"])
     # check if new created hashed key equals to password saved in database
-    if base64.b64encode(key).decode("utf-8") == dataSender[0]:
+    if base64.b64encode(key).decode("utf-8") == dataSender["password"]:
 
         # Check if receiver exists
-        stmt = ("select password, salt, id from user where email=%s")
-        data = (friendEmail)
-        cursor.execute(stmt, data)
-        dataReceiver = cursor.fetchone()
+        dataReceiver = userCollection.find_one({"email" : friendEmail})
 
         if dataReceiver is None: 
             resp = {'status': 400, 
@@ -312,18 +291,12 @@ def messagesUserAndFriend():
             'message': 'Receiver Does Not Exist', 
             'time': datetime.datetime.now()} 
             return resp
-        
-        stmt = ("SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = %s and m.message_to_id = %s) or (m.message_from_id = %s and m.message_to_id = %s) order by m.sent_at")
-        data = (dataSender[2], dataReceiver[2], dataReceiver[2], dataSender[2])
-        cursor.execute(stmt, data)
-        rows = cursor.fetchall()
-        messages = []
-        for r in rows: 
-            if r[1] == dataSender[2] and r[2] == dataReceiver[2]:
-                messages.append({"message" : r[0], "messageFromEmail" : userEmail, "messageToEmail" : friendEmail, "sentAt": r[3]})
-            else:
-                messages.append({"message" : r[0], "messageFromEmail" : friendEmail, "messageToEmail" : userEmail, "sentAt": r[3]})
 
+        conversations = messageCollection.find({"$or" : [{"messageFrom": dataSender, "messageTo": dataReceiver}, {"messageFrom": dataReceiver, "messageTo": dataSender}]})
+
+        messages = []
+        for conversation in conversations: 
+            messages.append({"message" : conversation["message"], "messageFromEmail" : conversation["messageFrom"]["email"], "messageToEmail" : conversation["messageTo"]["email"], "sentAt" : conversation["sentAt"]})
 
         resp = {'status': 200, 'error': False, 'message': 'Messages attached', 'time': datetime.datetime.now(), 'msgs': messages} 
         return resp
@@ -332,20 +305,10 @@ def messagesUserAndFriend():
         return resp
 
 
-def saveMessage(message, senderID, receiverID):
-    stmt = ("SELECT id FROM message ORDER BY id DESC LIMIT 1")
-    cursor.execute(stmt)
-    data = cursor.fetchone()
-    messageID = 0
-    if data is None: 
-        messageID = 1
-    else: 
-        messageID = data[0] + 1
-        
-    stmt = ("insert into message (id, message, sent_at, message_from_id, message_to_id) VALUES (%s, %s, %s, %s, %s)")
-    data = (messageID, message, datetime.datetime.now() , senderID, receiverID)
-    cursor.execute(stmt, data)
-    conn.commit()
+def saveMessage(message, sender, receiver):
+
+    newMessage = { "message": message, "messageFrom": sender, "messageTo": receiver, "sentAt": datetime.datetime.now() }
+    messageCollection.insert_one(newMessage)
     
 
 
