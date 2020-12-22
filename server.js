@@ -125,29 +125,38 @@ app.post('/change-password', urlencodedParser, function (req, res) {
 		return res.send({'status': 400, 'error': true, 'message': 'Required data missing', 'time': new Date(Date.now())} );
 	}
 
-	var sqlLogin = mysql.format("select password, salt from user where email=?", [email]);
-	con.query(sqlLogin, function (errorLogin, resultsLogin, fields) {
-		if (errorLogin) throw errorLogin;
-		if (resultsLogin.length == 0) {
-			return res.send({'status': 400, 'error': true, 'message': 'User Does Not Exist', 'time': new Date(Date.now())} );
-		}
+	MongoClient.connect(url, function(err, db) {
+		if (err) throw err;
+		var dbo = db.db("friends_mongo");
+		dbo.collection("user").findOne({email : email}, function(err, result) {
+			if (err) throw err;
+			if (result != null) {
 
-		const key = generateKey(password, resultsLogin[0].salt);
-		if (resultsLogin[0].password === key) {
-			// generate salt
-			const salt = generateSalt();
-			// generate database password
-			const dbPassword = generateKey(newPassword, salt);
-			
-			// update user with newly generated salt and dbPassword
-			var sqlUpdateUser = mysql.format("UPDATE user SET salt=?, password=? where email=?", [salt, dbPassword, email]);
-			con.query(sqlUpdateUser, function (errorUpdateUser, resultsUpdateUser, fields) {
-				if (errorUpdateUser) throw errorUpdateUser;
-				return res.send({'status': 200, 'error': false, 'message': 'Password changed', 'time': new Date(Date.now())} );
-			});
-		} else {
-			return res.send({'status': 400, 'error': true, 'message': 'Original password not right', 'time': new Date(Date.now())} );
-		}
+				const key = generateKey(password, result.salt);
+				if (result.password === key) {
+
+					// generate salt
+					const salt = generateSalt();
+					// generate database password
+					const dbPassword = generateKey(newPassword, salt);
+
+					var query = { email:  email };
+					var newValues = { $set: {salt: salt, password:  dbPassword } };
+					dbo.collection("user").updateOne(query, newValues, function(err, result) {
+						if (err) throw err;
+						return res.send({'status': 200, 'error': false, 'message': 'Password changed', 'time': new Date(Date.now())} );
+					})
+
+				} else {
+					return res.send({'status': 400, 'error': true, 'message': 'Original password not right', 'time': new Date(Date.now())} );
+				}
+
+			} else {
+				return res.send({'status': 400, 'error': true, 'message': 'User Does Not Exist', 'time': new Date(Date.now())} );
+			}
+			  
+			db.close();
+		});
 	});
 })
 
@@ -159,22 +168,47 @@ app.post('/forgot-password', urlencodedParser, function (req, res) {
 		return res.send({'status': 400, 'error': true, 'message': 'Email is required', 'time': new Date(Date.now())} );
 	}
 
-	var sqlLogin = mysql.format("select password, salt from user where email=?", [email]);
-	con.query(sqlLogin, function (errorLogin, resultsLogin, fields) {
-		if (errorLogin) throw errorLogin;
-		if (resultsLogin.length == 0) {
-			return res.send({'status': 400, 'error': true, 'message': 'User Does Not Exist', 'time': new Date(Date.now())} );
-		}
+	MongoClient.connect(url, function(err, db) {
+		if (err) throw err;
+		var dbo = db.db("friends_mongo");
+		dbo.collection("user").findOne({email : email}, function(err, result) {
+			if (err) throw err;
+			if (result != null) {
 
-		var uuidNumber = uuidv4();
-		var sqlUpdateUser = mysql.format("UPDATE user SET reset_token=? where email=?", [uuidNumber, email]);
-		con.query(sqlUpdateUser, function (errorUpdateUser, resultsUpdateUser, fields) {
-			if (errorUpdateUser) throw errorUpdateUser;
+				var uuidNumber = uuidv4();
 
-			sendNewUserEmail(email, false, uuidNumber)
-			return res.send({'status': 200, 'error': false, 'message': 'Reset password is sent', 'time': new Date(Date.now())} );
+				var query = { email:  email };
+				var newValues = { $set: {resetToken: uuidNumber } };
+				dbo.collection("user").updateOne(query, newValues, function(err, result) {
+					if (err) throw err;
+					// sendNewUserEmail(email, false, uuidNumber)
+					return res.send({'status': 200, 'error': false, 'message': 'Reset password is sent', 'time': new Date(Date.now())} );
+				})
+
+			} else {
+				return res.send({'status': 400, 'error': true, 'message': 'User Does Not Exist', 'time': new Date(Date.now())} );
+			}
+			  
+			db.close();
 		});
 	});
+
+	// var sqlLogin = mysql.format("select password, salt from user where email=?", [email]);
+	// con.query(sqlLogin, function (errorLogin, resultsLogin, fields) {
+	// 	if (errorLogin) throw errorLogin;
+	// 	if (resultsLogin.length == 0) {
+	// 		return res.send({'status': 400, 'error': true, 'message': 'User Does Not Exist', 'time': new Date(Date.now())} );
+	// 	}
+
+	// 	var uuidNumber = uuidv4();
+	// 	var sqlUpdateUser = mysql.format("UPDATE user SET reset_token=? where email=?", [uuidNumber, email]);
+	// 	con.query(sqlUpdateUser, function (errorUpdateUser, resultsUpdateUser, fields) {
+	// 		if (errorUpdateUser) throw errorUpdateUser;
+
+	// 		sendNewUserEmail(email, false, uuidNumber)
+	// 		return res.send({'status': 200, 'error': false, 'message': 'Reset password is sent', 'time': new Date(Date.now())} );
+	// 	});
+	// });
 
 })
 
@@ -186,25 +220,54 @@ app.post('/reset-password', urlencodedParser, function (req, res) {
 	if (token == undefined || password == undefined) {
 		return res.send({'status': 400, 'error': true, 'message': 'Required data missing', 'time': new Date(Date.now())} );
 	}
-	var sqlCheckToken = mysql.format("select id from user where reset_token=?", [token]);
-	con.query(sqlCheckToken, function (errorCheckToken, resultsCheckToken, fields) {
-		if (errorCheckToken) throw errorCheckToken;
-		if (resultsCheckToken.length == 0) {
-			return res.send({'status': 400, 'error': true, 'message': 'Token is not valid', 'time': new Date(Date.now())} );
-		} else {
-			// generate salt
-			const salt = generateSalt();
-			// generate database password
-			const dbPassword = generateKey(password, salt);
-			// update user using salt, password, token using id
-			var sqlUpdateUser = mysql.format("UPDATE user SET salt=?, password=?, reset_token=? where id=?", [salt, dbPassword, null, resultsCheckToken[0].id]);
-			con.query(sqlUpdateUser, function (errorCreateUser, resultsCreateUser, fields) {
-				if (errorCreateUser) throw errorCreateUser;
 
-				return res.send({'status': 200, 'error': false, 'message': 'Password successfully reset', 'time': new Date(Date.now())} );
-			});
-		}
+	MongoClient.connect(url, function(err, db) {
+		if (err) throw err;
+		var dbo = db.db("friends_mongo");
+		dbo.collection("user").findOne({resetToken : token}, function(err, result) {
+			if (err) throw err;
+			if (result != null) {
+
+				// generate salt
+				const salt = generateSalt();
+				// generate database password
+				const dbPassword = generateKey(password, salt);
+
+				var query = { email:  result.email };
+				var newValues = { $set: {salt: salt, password:  dbPassword, resetToken: null } };
+				dbo.collection("user").updateOne(query, newValues, function(err, result2) {
+					if (err) throw err;
+					return res.send({'status': 200, 'error': false, 'message': 'Password successfully reset', 'time': new Date(Date.now())} );
+				})
+
+			} else {
+				return res.send({'status': 400, 'error': true, 'message': 'Token is not valid', 'time': new Date(Date.now())} );
+			}
+			  
+			db.close();
+		});
 	});
+
+
+	// var sqlCheckToken = mysql.format("select id from user where reset_token=?", [token]);
+	// con.query(sqlCheckToken, function (errorCheckToken, resultsCheckToken, fields) {
+	// 	if (errorCheckToken) throw errorCheckToken;
+	// 	if (resultsCheckToken.length == 0) {
+	// 		return res.send({'status': 400, 'error': true, 'message': 'Token is not valid', 'time': new Date(Date.now())} );
+	// 	} else {
+	// 		// generate salt
+	// 		const salt = generateSalt();
+	// 		// generate database password
+	// 		const dbPassword = generateKey(password, salt);
+	// 		// update user using salt, password, token using id
+	// 		var sqlUpdateUser = mysql.format("UPDATE user SET salt=?, password=?, reset_token=? where id=?", [salt, dbPassword, null, resultsCheckToken[0].id]);
+	// 		con.query(sqlUpdateUser, function (errorCreateUser, resultsCreateUser, fields) {
+	// 			if (errorCreateUser) throw errorCreateUser;
+
+	// 			return res.send({'status': 200, 'error': false, 'message': 'Password successfully reset', 'time': new Date(Date.now())} );
+	// 		});
+	// 	}
+	// });
 })
 
 // all-friends
