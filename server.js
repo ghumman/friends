@@ -10,6 +10,7 @@ var nodemailer = require('nodemailer');
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 var mysql = require('mysql');
+var mongo = require('mongodb');
 
 var con = mysql.createConnection({
   host: "localhost",
@@ -17,6 +18,9 @@ var con = mysql.createConnection({
   password: "ghumman",
   database : "friends_mysql"
 });
+
+var MongoClient = mongo.MongoClient;
+var url = "mongodb://localhost:27017/";
 
 var transporter = nodemailer.createTransport({
 	service: 'gmail',
@@ -52,34 +56,31 @@ app.post('/add-user', urlencodedParser, function (req, res) {
 		return res.send({'status': 400, 'error': true, 'message': 'Required data missing', 'time': new Date(Date.now())} );
 	}
 
-	var sqlCheckUser = mysql.format("select password, salt from user where email=?", [email]);
-	con.query(sqlCheckUser, function (errorCheckUser, resultsCheckUser, fields) {
-		if (errorCheckUser) throw errorCheckUser;
-		if (resultsCheckUser.length == 0) {
+	MongoClient.connect(url, function(err, db) {
+		if (err) throw err;
+		var dbo = db.db("friends_mongo");
+		dbo.collection("user").findOne({email : email}, function(err, result) {
+			if (err) throw err;
+			if (result == null) {
+				// User does not exist, creat a new one
+				// generate salt
+				const salt = generateSalt();
+				// generate database password
+				const dbPassword = generateKey(password, salt);
 
-			// generate salt
-			const salt = generateSalt();
-			// generate database password
-			const dbPassword = generateKey(password, salt);
-			var sqlGetID = mysql.format("select id from user order by id desc limit 1");
-			con.query(sqlGetID, function (errorGetID, resultsGetID, fields) {
-				if (errorGetID) throw errorGetID;
-				var newUserID = 1;
-				if (resultsGetID.length > 0) {
-					newUserID = resultsGetID[0].id + 1;
-				}
-
-				// create new user using id, auth_type, created_at, email, firstName, lastName, dbPassword, salt 
-				var sqlCreateUser = mysql.format("insert into user (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [newUserID, 0, new Date(Date.now()) , email, firstName, lastName, dbPassword, salt]);
-				con.query(sqlCreateUser, function (errorCreateUser, resultsCreateUser, fields) {
-					if (errorCreateUser) throw errorCreateUser;
-					sendNewUserEmail(email, true, "")
+				var newUser = { firstName: firstName, lastName: lastName, createdAt:  new Date(Date.now()), salt: salt, password: dbPassword, email: email };
+				dbo.collection("user").insertOne(newUser, function(err, result) {
+					if (err) throw err;
+					// sendNewUserEmail(email, true, "")
 					return res.send({'status': 200, 'error': false, 'message': 'User Created', 'time': new Date(Date.now())} );
-				});
-			});
-		} else {
-			return res.send({'status': 400, 'error': true, 'message': 'User Already Exists', 'time': new Date(Date.now())} );
-		}
+				})
+
+			} else {
+				return res.send({'status': 400, 'error': true, 'message': 'User Already Exists', 'time': new Date(Date.now())} );
+			}
+			  
+			db.close();
+		});
 	});
 })
 
@@ -92,19 +93,25 @@ app.post('/login', urlencodedParser, function (req, res) {
 	if (email == undefined || password == undefined) {
 		return res.send({'status': 400, 'error': true, 'message': 'Email or Password missing', 'time': new Date(Date.now())} );
 	}
-	var sql = mysql.format("select password, salt from user where email=?", [email]);
-	con.query(sql, function (error, results, fields) {
-		if (error) throw error;
-		if (results.length == 0) {
-			return res.send({'status': 400, 'error': true, 'message': 'User Does Not Exist', 'time': new Date(Date.now())} );
-		}
+	// var sql = mysql.format("select password, salt from user where email=?", [email]);
+	MongoClient.connect(url, function(err, db) {
+		if (err) throw err;
+		var dbo = db.db("friends_mongo");
+		dbo.collection("user").findOne({email : email}, function(err, result) {
+			if (err) throw err;
+			if (result.length == 0) {
+				return res.send({'status': 400, 'error': true, 'message': 'User Does Not Exist', 'time': new Date(Date.now())} );
+			}
 
-		const key = generateKey(password, results[0].salt);
-		if (results[0].password === key) {
-			return res.send({'status': 200, 'error': false, 'message': 'Logged In', 'time': new Date(Date.now())} );
-		} else {
-			return res.send({'status': 400, 'error': true, 'message': 'Login Failed', 'time': new Date(Date.now())} );
-		}
+			const key = generateKey(password, result.salt);
+			if (result.password === key) {
+				return res.send({'status': 200, 'error': false, 'message': 'Logged In', 'time': new Date(Date.now())} );
+			} else {
+				return res.send({'status': 400, 'error': true, 'message': 'Login Failed', 'time': new Date(Date.now())} );
+			}
+			  
+			db.close();
+		});
 	});
 })
 
