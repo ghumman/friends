@@ -1,6 +1,7 @@
 import flask
 from flask import request
-import datetime; 
+import datetime
+import pymongo
 
 from flaskext.mysql import MySQL
 from hashlib import pbkdf2_hmac
@@ -21,6 +22,12 @@ app.config['MYSQL_DATABASE_DB'] = 'friends_mysql'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 mysql.init_app(app)
 
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+mydb = myclient["friends_mongo"]
+userCollection = mydb["user"]
+messageCollection = mydb["message"]
+
+
 conn = mysql.connect()
 cursor =conn.cursor()
 
@@ -29,16 +36,14 @@ def addUser():
     try:
         email = request.form['email']
         password = request.form['password']
-        firstName = request.form['first_name']
-        lastName = request.form['last_name']
+        firstName = request.form['firstName']
+        lastName = request.form['lastName']
 
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt from user where email=%s")
-    data = (email)
-    cursor.execute(stmt, data)
-    data = cursor.fetchone()
+
+    data = userCollection.find_one({"email" : email})
 
     if data is not None: 
         resp = {'status': 400, 
@@ -49,23 +54,11 @@ def addUser():
     salt = generateSalt()
     dbPassword = base64.b64encode(generateKey(password, salt)).decode("utf-8") 
 
-    # Get the last id to create id for user as our table is not auto increment on id column
-    stmt = ("select id from user order by id desc limit 1")
-    cursor.execute(stmt)
-    data = cursor.fetchone()
-    userID = 0
-    if data is not None: 
-        userID = data[0] + 1
-    else: 
-        userID = 1
+    newUser = { "authType": 0, "firstName": firstName, "lastName": lastName, "createdAt": datetime.datetime.now(), "salt": salt, "password": dbPassword, "email": email}
 
-    # Create the new user
-    stmt = ("insert into user (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
-    data = (userID, 0, datetime.datetime.now() , email, firstName, lastName, dbPassword, salt)
-    cursor.execute(stmt, data)
-    conn.commit()
+    userCollection.insert_one(newUser)
 
-    sendNewUserEmail(email, True, "")
+    # sendNewUserEmail(email, True, "")
 
     resp = {'status': 200, 'error': False, 'message': 'User Created', 'time': datetime.datetime.now()} 
     return resp
@@ -79,10 +72,9 @@ def login():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Email or Password missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt from user where email=%s")
-    data = (email)
-    cursor.execute(stmt, data)
-    data = cursor.fetchone()
+
+
+    data = userCollection.find_one({"email" : email})
 
     if data is None: 
         resp = {'status': 400, 
@@ -91,9 +83,9 @@ def login():
         'time': datetime.datetime.now()} 
         return resp
     
-    key = generateKey(password, data[1])
+    key = generateKey(password, data["salt"])
     # check if new created hashed key equals to password saved in database
-    if base64.b64encode(key).decode("utf-8") == data[0]:
+    if base64.b64encode(key).decode("utf-8") == data["password"]:
         resp = {'status': 200, 'error': False, 'message': 'Logged In', 'time': datetime.datetime.now()} 
         return resp
     else :
