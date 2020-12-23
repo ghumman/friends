@@ -5,8 +5,7 @@
     $client = new MongoDB\Client("mongodb://localhost:27017");
     $userCollection = $client->friends_mongo->user;
     $messageCollection = $client->friends_mongo->message;
-
-    require_once('db_connect.php');
+    
     require_once "Mail.php";
 
     $response = array();
