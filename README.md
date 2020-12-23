@@ -1,9 +1,9 @@
 ```
 git init
-git remote add php git@github.com:ghumman/friends.git
+git remote add php-mongo git@github.com:ghumman/friends.git
 git add .
 git commit -m "Initial commit"
-git push php master:php
+git push php-mongo master:php-mongo
 ```
 
 ## Starting the server
