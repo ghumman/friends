@@ -131,18 +131,11 @@
                 $email = $_POST['email'];
 
                 try {
-                    // $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
-                    // $stmt->bindParam(':email', $email);
-        
-                    // $stmt->execute();
-        
-                    // if ($stmt->rowCount() > 0) {
                     $user = $userCollection->findOne([
                         'email' => $email,
                     ]);
         
                     if (!is_null($user)) {
-                        // $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         
                         $key = base64_encode(generateKey($password, $user['salt']));
 
@@ -151,12 +144,6 @@
                             $salt = generateSalt();
                             $dbPassword = base64_encode(generateKey($newPassword, $salt));
 
-                            // $stmt = $conn->prepare("UPDATE user SET salt=:salt, password=:dbPassword where email=:email");
-                            // $stmt->bindParam(':email', $email);
-                            // $stmt->bindParam(':salt', $salt);
-                            // $stmt->bindParam(':dbPassword', $dbPassword);
-                            // $stmt->execute();
-
                             $updateResult = $userCollection->updateOne(
                                 [ 'email' => $email ],
                                 [ '$set' => [ 
@@ -164,8 +151,6 @@
                                     'password' => $dbPassword
                                 ]]
                             );
-
-
 
                             $response['status'] = 200;
                             $response['error'] = false;
@@ -204,24 +189,22 @@
     
                 try {
 
-                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
-                    $stmt->bindParam(':email', $email);
+                    $user = $userCollection->findOne([
+                        'email' => $email,
+                    ]);
         
-                    $stmt->execute();
-        
-                    if ($stmt->rowCount() > 0) {
+                    if (!is_null($user)) {
 
                         $token = uniqid();
-                        $stmt = $conn->prepare("UPDATE user SET reset_token=:token where email=:email");
-                        $stmt->bindParam(':email', $email);
-                        $stmt->bindParam(':token', $token);
-            
-                        $stmt->execute();
+                        $updateResult = $userCollection->updateOne(
+                            [ 'email' => $email ],
+                            [ '$set' => [ 
+                                'resetToken' => $token
+                            ]]
+                        );
 
-
-                        sendNewUserEmail($email, false, $token);
-                        
-
+                        // sendNewUserEmail($email, false, $token);
+                    
                         $response['status'] = 200;
                         $response['error'] = false;
                         $response['message'] = 'Reset password is sent';
@@ -256,25 +239,24 @@
 
                 try {
 
-                    $stmt = $conn->prepare("select id from user where reset_token=:token");
-                    $stmt->bindParam(':token', $token);
-
-                    $stmt->execute();
-                    if ($stmt->rowCount() > 0) {
-                        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                        $userID = $results[0]['id'];
+                    $user = $userCollection->findOne([
+                        'resetToken' => $token,
+                    ]);
+        
+                    if (!is_null($user)) {
 
                         $salt = generateSalt();
                         $dbPassword = base64_encode(generateKey($password, $salt));
 
-                        $stmt = $conn->prepare("UPDATE user SET salt=:salt, password=:dbPassword, reset_token=NULL where id=:userID");
-                        $stmt->bindParam(':salt', $salt);
-                        $stmt->bindParam(':dbPassword', $dbPassword);
-                        $stmt->bindParam(':userID', $userID);
-                        $stmt->execute();
+                        $updateResult = $userCollection->updateOne(
+                            [ 'email' => $user['email'] ],
+                            [ '$set' => [ 
+                                'salt' => $salt,
+                                'password' => $dbPassword,
+                                'resetToken' => null
+                            ]]
+                        );
                         
-
                         $response['status'] = 200;
                         $response['error'] = false;
                         $response['message'] = 'Password successfully reset';
@@ -306,38 +288,33 @@
             if (isTheseParametersAvailable(array('email', 'password'))) {
                 $email = $_POST['email'];
                 $password = $_POST['password'];
-
-                
     
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
-                    $stmt->bindParam(':email', $email);
-    
-                    $stmt->execute();
-    
-                    if ($stmt->rowCount() > 0) {
-                        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                        
-                        $key = base64_encode(generateKey($password, $results[0]['salt']));
 
-                        if ($key == $results[0]['password']) {
+                    $user = $userCollection->findOne([
+                        'email' => $email,
+                    ]);
+        
+                    if (!is_null($user)) {
+                        
+                        $key = base64_encode(generateKey($password, $user['salt']));
+
+                        if ($key == $user['password']) {
 
                             $users = array();
 
-                            $stmt = $conn->prepare("select first_name, last_name, email FROM user where email!=:email");
-                            $stmt->bindParam(':email', $email);
-            
-                            $stmt->execute();
-                            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                            for ($x=0; $x<count($results); $x++) {
-                                $users[$x] = [
-                                    "firstName" => $results[$x]['first_name'], 
-                                    "lastName" => $results[$x]['last_name'],
-                                    "email" => $results[$x]['email']
+                            $friends = $userCollection->find([
+                                'email' => ['$ne' => $email],
+                            ]);
+                            
+                            foreach ($friends as $friend) {
+                                $info = [
+                                    "firstName" => $friend['firstName'], 
+                                    "lastName" => $friend['lastName'],
+                                    "email" => $friend['email']
                                 ];
-                            }
-
+                                array_push($users, $info);
+                             };
 
                             $response['status'] = 200;
                             $response['error'] = false;
@@ -380,8 +357,6 @@
                 $messageFromEmail = $_POST['messageFromEmail'];
                 $messageToEmail = $_POST['messageToEmail'];
                 $password = $_POST['password'];
-
-                
     
                 try {
                     $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
