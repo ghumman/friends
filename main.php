@@ -359,45 +359,31 @@
                 $password = $_POST['password'];
     
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
-                    $stmt->bindParam(':email', $messageFromEmail);
-    
-                    $stmt->execute();
-    
-                    if ($stmt->rowCount() > 0) {
-                        $dataSender = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $sender = $userCollection->findOne([
+                        'email' => $messageFromEmail,
+                    ]);
+        
+                    if (!is_null($sender)) {
                         
-                        $key = base64_encode(generateKey($password, $dataSender[0]['salt']));
+                        $key = base64_encode(generateKey($password, $sender['salt']));
 
-                        if ($key == $dataSender[0]['password']) {
-                            $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
-                            $stmt->bindParam(':email', $messageToEmail);
-            
-                            $stmt->execute();
-            
-                            if ($stmt->rowCount() > 0) {
-                                $dataReceiver = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        if ($key == $sender['password']) {
+
+                            $receiver = $userCollection->findOne([
+                                'email' => $messageToEmail,
+                            ]);
+                
+                            if (!is_null($receiver)) {
 
                                 # Sender credentials are correct and both sender and receiver exists
-                                $stmt = $conn->prepare("SELECT id FROM message ORDER BY id DESC LIMIT 1");
-                                $stmt->execute();
-                                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                        
-                                $messageID = 1;
-                                if ($stmt->rowCount() > 0) {
-                                    $messageID = $results[0]['id'] + 1;
-                                }
-                        
                                 $currentTime = date("Y-m-d H:i:s");
-                        
-                                $stmt = $conn->prepare("insert into message (id, message, sent_at, message_from_id, message_to_id) VALUES (:messageID, :message, :currentTime, :senderID, :receiverID)");
-                                $stmt->bindParam(':messageID', $messageID);
-                                $stmt->bindParam(':message', $message);
-                                $stmt->bindParam(':currentTime', $currentTime);
-                                $stmt->bindParam(':senderID', $dataSender[0]['id']);
-                                $stmt->bindParam(':receiverID', $dataReceiver[0]['id']);
-                        
-                                $stmt->execute();
+
+                                $insertOneResult = $messageCollection->insertOne([
+                                    'message' => $message,
+                                    'sentAt' => $currentTime,
+                                    'messageFrom' => $sender,
+                                    'messageTo' => $receiver
+                                ]);
 
                                 $response['status'] = 200;
                                 $response['error'] = false;
@@ -444,61 +430,45 @@
                 $userEmail = $_POST['userEmail'];
                 $friendEmail = $_POST['friendEmail'];
                 $password = $_POST['password'];
-
-                
     
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
-                    $stmt->bindParam(':email', $userEmail);
-    
-                    $stmt->execute();
-    
-                    if ($stmt->rowCount() > 0) {
-                        $dataSender = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $user = $userCollection->findOne([
+                        'email' => $userEmail,
+                    ]);
+        
+                    if (!is_null($user)) {
                         
-                        $key = base64_encode(generateKey($password, $dataSender[0]['salt']));
+                        $key = base64_encode(generateKey($password, $user['salt']));
 
-                        if ($key == $dataSender[0]['password']) {
-                            $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
-                            $stmt->bindParam(':email', $friendEmail);
-            
-                            $stmt->execute();
-            
-                            if ($stmt->rowCount() > 0) {
-                                $dataReceiver = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        if ($key == $user['password']) {
 
-                                # Sender credentials are correct and both sender and receiver exists
-                                $stmt = $conn->prepare("SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = :senderID and m.message_to_id = :receiverID) or (m.message_from_id = :receiverID and m.message_to_id = :senderID) order by m.sent_at");
-                                $stmt->bindParam(':senderID', $dataSender[0]['id']);
-                                $stmt->bindParam(':receiverID', $dataReceiver[0]['id']);
-                                $stmt->execute();
-                                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                            $friend = $userCollection->findOne([
+                                'email' => $friendEmail,
+                            ]);
+                
+                            if (!is_null($friend)) {
+
+                                $converations = $messageCollection->find([
+                                    '$or' =>  [['messageFrom' =>  $user, 'messageTo' => $friend], ['messageFrom' => $friend, 'messageTo' => $user]]
+                                ]);
 
                                 $messages = array();
 
-                                for ($x=0; $x<count($results); $x++) {
-                                    if ($results[$x]['message_from_id'] == $dataSender[0]['id'] && $results[$x]['message_to_id'] == $dataReceiver[0]['id']) {
-                                        $messages[$x] = [
-                                            "message" => $results[$x]['message'], 
-                                            "messageFromEmail" => $userEmail,
-                                            "messageToEmail" => $friendEmail,
-                                            "sentAt" => $results[$x]['sent_at']
-                                        ]; 
-                                    } else {
-                                        $messages[$x] = [
-                                            "message" => $results[$x]['message'], 
-                                            "messageFromEmail" => $friendEmail,
-                                            "messageToEmail" => $userEmail,
-                                            "sentAt" => $results[$x]['sent_at']
-                                        ]; 
-                                    }
-                                }
+                                foreach ($converations as $converation) {
+                                    $mesg = [
+                                        "message" => $converation['message'], 
+                                        "messageFromEmail" => $converation['messageFrom']['email'],
+                                        "messageToEmail" => $converation['messageTo']['email'],
+                                        "sentAt" => $converation['sentAt']
+                                    ];
+                                    array_push($messages, $mesg);
+                                 };
 
                                 $response['status'] = 200;
                                 $response['error'] = false;
                                 $response['message'] = 'Messages attached';
                                 $response['time'] = date("Y-m-d H:i:s");
-                                $response['usersAll'] = $messages;
+                                $response['messages'] = $messages;
 
                             } else {
                                 $response['status'] = 400;
@@ -563,28 +533,6 @@
         }
 
         return $returnValue;
-    }
-
-    function saveMessage($message, $senderID, $receiverID) {
-        $stmt = $conn->prepare("SELECT id FROM message ORDER BY id DESC LIMIT 1");
-        $stmt->execute();
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $messageID = 1;
-        if ($stmt->rowCount() > 0) {
-            $messageID = $results[0]['id'] + 1;
-        }
-
-        $currentTime = date("Y-m-d H:i:s");
-
-        $stmt = $conn->prepare("insert into message (id, message, sent_at, message_from_id, message_to_id) VALUES (:messageID, :message, :currentTime, :senderID, :receiverID)");
-        $stmt->bindParam(':messageID', $messageID);
-        $stmt->bindParam(':message', $message);
-        $stmt->bindParam(':currentTime', $currentTime);
-        $stmt->bindParam(':senderID', $senderID);
-        $stmt->bindParam(':receiverID', $receiverID);
-
-        $stmt->execute();
     }
 
     function sendNewUserEmail($email, $accountCreated, $token) {
