@@ -1,10 +1,15 @@
 <?php
-  header("Access-Control-Allow-Origin: *");
 
-  require_once('db_connect.php');
-  require_once "Mail.php";
+    require 'vendor/autoload.php';
+    header("Access-Control-Allow-Origin: *");
+    $client = new MongoDB\Client("mongodb://localhost:27017");
+    $userCollection = $client->friends_mongo->user;
+    $messageCollection = $client->friends_mongo->message;
 
-  $response = array();
+    require_once('db_connect.php');
+    require_once "Mail.php";
+
+    $response = array();
 
 
     switch ($_SERVER['REQUEST_URI']) {
@@ -17,50 +22,36 @@
                 $lastName = $_POST['lastName'];
         
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
-                    $stmt->bindParam(':email', $email);
-                    $stmt->execute();
 
-                    if ($stmt->rowCount() > 0) {
+                    $user = $userCollection->findOne([
+                        'email' => $email,
+                    ]);
+
+                    if (!is_null($user)) {
                         $response['status'] = 400;
                         $response['error'] = true;
                         $response['message'] = 'User Already Exists';
                         $response['time'] = date("Y-m-d H:i:s");
                     } else {
 
-
                         $salt = generateSalt();
                         $dbPassword = base64_encode(generateKey($password, $salt));
 
-                        $stmt = $conn->prepare("select id from user order by id desc limit 1");
-                        $stmt->execute();
-                        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                        $userID = 1;
-                        if ($stmt->rowCount() > 0) {
-                            $userID = $results[0]['id'] + 1;
-                        }
-
                         $currentTime = date("Y-m-d H:i:s");
 
-                        $stmt = $conn->prepare("insert into user (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (:userID, 0, :currentTime, :email, :firstName, :lastName, :dbPassword, :salt)");
-                        $stmt->bindParam(':userID', $userID);
-                        $stmt->bindParam(':currentTime', $currentTime);
-                        $stmt->bindParam(':email', $email);
-                        $stmt->bindParam(':firstName', $firstName);
-                        $stmt->bindParam(':lastName', $lastName);
-                        $stmt->bindParam(':dbPassword', $dbPassword);
-                        $stmt->bindParam(':salt', $salt);
-        
-                        if ($stmt->execute()) {
+                        $insertOneResult = $userCollection->insertOne([
+                            'createdAt' => $currentTime,
+                            'email' => $email,
+                            'firstName' => $firstName,
+                            'lastName' => $lastName,
+                            'dbPassword' => $dbPassword,
+                            'salt' => $salt,
+                        ]);
 
-                            sendNewUserEmail($email, true, "");
-
-                            $response['status'] = 200;
-                            $response['error'] = false;
-                            $response['message'] = 'User Created';
-                            $response['time'] = date("Y-m-d H:i:s");
-                        }
+                        $response['status'] = 200;
+                        $response['error'] = false;
+                        $response['message'] = 'User Created';
+                        $response['time'] = date("Y-m-d H:i:s");
 
                     }
                     
@@ -87,21 +78,17 @@
                 $email = $_POST['email'];
                 $password = $_POST['password'];
 
-                
-        
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
-                    $stmt->bindParam(':email', $email);
+
+                    $user = $userCollection->findOne([
+                        'email' => $email,
+                    ]);
         
-                    $stmt->execute();
-        
-                    if ($stmt->rowCount() > 0) {
-                        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    if (!is_null($user)) {
                         
-                        $key = base64_encode(generateKey($password, $results[0]['salt']));
+                        $key = base64_encode(generateKey($password, $user['salt']));
 
-                        if ($key == $results[0]['password']) {
-
+                        if ($key == $user['password']) {
 
                             $response['status'] = 200;
                             $response['error'] = false;
@@ -144,26 +131,40 @@
                 $email = $_POST['email'];
 
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
-                    $stmt->bindParam(':email', $email);
+                    // $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
+                    // $stmt->bindParam(':email', $email);
         
-                    $stmt->execute();
+                    // $stmt->execute();
         
-                    if ($stmt->rowCount() > 0) {
-                        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    // if ($stmt->rowCount() > 0) {
+                    $user = $userCollection->findOne([
+                        'email' => $email,
+                    ]);
+        
+                    if (!is_null($user)) {
+                        // $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         
-                        $key = base64_encode(generateKey($password, $results[0]['salt']));
+                        $key = base64_encode(generateKey($password, $user['salt']));
 
-                        if ($key == $results[0]['password']) {
+                        if ($key == $user['password']) {
 
                             $salt = generateSalt();
                             $dbPassword = base64_encode(generateKey($newPassword, $salt));
 
-                            $stmt = $conn->prepare("UPDATE user SET salt=:salt, password=:dbPassword where email=:email");
-                            $stmt->bindParam(':email', $email);
-                            $stmt->bindParam(':salt', $salt);
-                            $stmt->bindParam(':dbPassword', $dbPassword);
-                            $stmt->execute();
+                            // $stmt = $conn->prepare("UPDATE user SET salt=:salt, password=:dbPassword where email=:email");
+                            // $stmt->bindParam(':email', $email);
+                            // $stmt->bindParam(':salt', $salt);
+                            // $stmt->bindParam(':dbPassword', $dbPassword);
+                            // $stmt->execute();
+
+                            $updateResult = $userCollection->updateOne(
+                                [ 'email' => $email ],
+                                [ '$set' => [ 
+                                    'salt' => $salt,
+                                    'password' => $dbPassword
+                                ]]
+                            );
+
 
 
                             $response['status'] = 200;
