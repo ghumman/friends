@@ -1,157 +1,146 @@
+require 'mongo'
+
+
+$db = Mongo::Client.new([ '127.0.0.1:27017' ], :database => 'friends_mongo')
+$userCollection = $db[:user]
+$messageCollection = $db[:message]
+
 class MessagesController < ApplicationController
     skip_before_action :verify_authenticity_token
 
-    # def sendMessage
-    #     message = params[:message]
-    #     messageFromEmail = params[:messageFromEmail]
-    #     messageToEmail = params[:messageToEmail]
-    #     password = params[:password]
+    def sendMessage
+        message = params[:message]
+        messageFromEmail = params[:messageFromEmail]
+        messageToEmail = params[:messageToEmail]
+        password = params[:password]
 
-    #     if message == nil || messageFromEmail == nil || messageToEmail == nil || password == nil
-    #         return render json: {
-    #             status: 400,
-    #             error: true,
-    #             message: "Required data missing",
-    #             time: DateTime.now() 
-    #         }
-    #     end
+        if message == nil || messageFromEmail == nil || messageToEmail == nil || password == nil
+            return render json: {
+                status: 400,
+                error: true,
+                message: "Required data missing",
+                time: DateTime.now() 
+            }
+        end
 
-    #     stmt = "select password, salt, id from user where email=\"" + messageFromEmail + "\""
-    #     dataSender =  ActiveRecord::Base.connection.exec_query(stmt)
+        dataSender = $userCollection.find( { email: messageFromEmail } ).first
 
-    #     if dataSender.length() == 0 
-    #         return render json: {
-    #             status: 400,
-    #             error: true,
-    #             message: "Sender Does Not Exist",
-    #             time: DateTime.now() 
-    #         }
-    #     end
+        if dataSender == nil
+            return render json: {
+                status: 400,
+                error: true,
+                message: "Sender Does Not Exist",
+                time: DateTime.now() 
+            }
+        end
 
-    #     key = generateKey(password, dataSender.entries[0].fetch("salt"))
+        key = generateKey(password, dataSender["salt"])
 
-    #     if dataSender.entries[0].fetch("password") == Base64.encode64(key).gsub("\n",'')
-            
-    #         stmt = "select password, salt, id from user where email=\"" + messageToEmail + "\""
-    #         dataReceiver =  ActiveRecord::Base.connection.exec_query(stmt)
+        if dataSender["password"] == Base64.encode64(key).gsub("\n",'')
 
-    #         if dataReceiver.length() == 0 
-    #             return render json: {
-    #                 status: 400,
-    #                 error: true,
-    #                 message: "Receiver Does Not Exist",
-    #                 time: DateTime.now() 
-    #             }
-    #         end
+            dataReceiver = $userCollection.find( { email: messageToEmail } ).first
 
-    #         # Sender credentials are correct and both sender and receiver exists
-    #         saveMessage(message, dataSender.entries[0].fetch("id") , dataReceiver.entries[0].fetch("id") )
+            if dataReceiver == nil
+                return render json: {
+                    status: 400,
+                    error: true,
+                    message: "Receiver Does Not Exist",
+                    time: DateTime.now() 
+                }
+            end
 
-    #         return render json: {
-    #             status: 200,
-    #             error: false,
-    #             message: "Message sent",
-    #             time: DateTime.now() 
-    #          }
+            # Sender credentials are correct and both sender and receiver exists
+            saveMessage(message, dataSender , dataReceiver )
 
-    #     else 
-    #         return render json: {
-    #             status: 400,
-    #             error: true,
-    #             message: "Login Failed",
-    #             time: DateTime.now() 
-    #          }
-    #     end
-    # end
+            return render json: {
+                status: 200,
+                error: false,
+                message: "Message sent",
+                time: DateTime.now() 
+             }
+
+        else 
+            return render json: {
+                status: 400,
+                error: true,
+                message: "Login Failed",
+                time: DateTime.now() 
+             }
+        end
+    end
     
-    # def messagesUserAndFriend
-    #     userEmail = params[:userEmail]
-    #     friendEmail = params[:friendEmail]
-    #     password = params[:password]
+    def messagesUserAndFriend
+        userEmail = params[:userEmail]
+        friendEmail = params[:friendEmail]
+        password = params[:password]
 
-    #     if userEmail == nil || friendEmail == nil || password == nil
-    #         return render json: {
-    #             status: 400,
-    #             error: true,
-    #             message: "Required data missing",
-    #             time: DateTime.now() 
-    #         }
-    #     end
-    #     stmt = "select password, salt, id from user where email=\"" + userEmail + "\""
-    #     dataSender =  ActiveRecord::Base.connection.exec_query(stmt)
+        if userEmail == nil || friendEmail == nil || password == nil
+            return render json: {
+                status: 400,
+                error: true,
+                message: "Required data missing",
+                time: DateTime.now() 
+            }
+        end
 
-    #     if dataSender.length() == 0 
-    #         return render json: {
-    #             status: 400,
-    #             error: true,
-    #             message: "Sender Does Not Exist",
-    #             time: DateTime.now() 
-    #         }
-    #     end
+        dataSender = $userCollection.find( { email: userEmail } ).first
 
-    #     key = generateKey(password, dataSender.entries[0].fetch("salt"))
+        if dataSender == nil
+            return render json: {
+                status: 400,
+                error: true,
+                message: "Sender Does Not Exist",
+                time: DateTime.now() 
+            }
+        end
 
-    #     if dataSender.entries[0].fetch("password") == Base64.encode64(key).gsub("\n",'')
-            
-    #         stmt = "select password, salt, id from user where email=\"" + friendEmail + "\""
-    #         dataReceiver =  ActiveRecord::Base.connection.exec_query(stmt)
+        key = generateKey(password, dataSender["salt"])
 
-    #         if dataReceiver.length() == 0 
-    #             return render json: {
-    #                 status: 400,
-    #                 error: true,
-    #                 message: "Receiver Does Not Exist",
-    #                 time: DateTime.now() 
-    #             }
-    #         end
+        if dataSender["password"] == Base64.encode64(key).gsub("\n",'')
 
-    #         stmt = "SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = " + dataSender.entries[0].fetch("id").to_s + " and m.message_to_id = " + dataReceiver.entries[0].fetch("id").to_s + ") or (m.message_from_id = " + dataReceiver.entries[0].fetch("id").to_s + " and m.message_to_id = " + dataSender.entries[0].fetch("id").to_s + ") order by m.sent_at"
-    #         result =  ActiveRecord::Base.connection.exec_query(stmt)
+            dataReceiver = $userCollection.find( { email: friendEmail } ).first
 
-    #         messages = []
+            if dataReceiver == nil
+                return render json: {
+                    status: 400,
+                    error: true,
+                    message: "Receiver Does Not Exist",
+                    time: DateTime.now() 
+                }
+            end
 
-    #         result.each { |item|
-    #             if item.fetch("message_from_id") == dataSender.entries[0].fetch("id") && item.fetch("message_to_id") == dataReceiver.entries[0].fetch("id") 
-    #                 messages.append({"message" => item.fetch("message"), "messageFromEmail" => userEmail, "messageToEmail" => friendEmail, "sentAt" => item.fetch("sent_at")})
-    #             else
-    #                 messages.append({"message" => item.fetch("message"), "messageFromEmail" => friendEmail, "messageToEmail" => userEmail, "sentAt" => item.fetch("sent_at")})
-    #             end
-    #         }
+            result = $messageCollection.find( { '$or' => [{'messageFrom' => dataSender, 'messageTo' => dataReceiver},  {'messageFrom' => dataReceiver, 'messageTo' => dataSender} ] })
 
-    #         return render json: {
-    #             status: 200,
-    #             error: false,
-    #             message: "Messages attached",
-    #             time: DateTime.now(),
-    #             msgs: messages
-    #         }
+            messages = []
 
-    #     else 
-    #         return render json: {
-    #             status: 400,
-    #             error: true,
-    #             message: "Login Failed",
-    #             time: DateTime.now() 
-    #          }
-    #     end
-    # end
+            result.each { |item|
+                messages.append({"message" => item["message"], "messageFromEmail" => item['messageFrom']['email'], "messageToEmail" => item['messageTo']['email'], "sentAt" => item["sent_at"]})
+            }
 
-    # def saveMessage(message, senderID, receiverID)
+            return render json: {
+                status: 200,
+                error: false,
+                message: "Messages attached",
+                time: DateTime.now(),
+                msgs: messages
+            }
 
-    #     stmt = ("SELECT id FROM message ORDER BY id DESC LIMIT 1")
-    #     data =  ActiveRecord::Base.connection.exec_query(stmt)
-        
-    #     messageID = 0
-    #     if data.length() != 0
-    #         messageID = data.entries[0].fetch("id") + 1
-    #     else 
-    #         messageID = 1
-    #     end
+        else 
+            return render json: {
+                status: 400,
+                error: true,
+                message: "Login Failed",
+                time: DateTime.now() 
+             }
+        end
+    end
 
-    #     #Create new message
-    #     stmt = "insert into message (id, message, sent_at, message_from_id, message_to_id) VALUES (" + messageID.to_s + ", \"" + message + "\", \"" + DateTime.now().to_s + "\", " + senderID.to_s + ", " + receiverID.to_s + ")"
-    #     data =  ActiveRecord::Base.connection.exec_query(stmt)
+    def saveMessage(message, sender, receiver)
 
-    # end
+        #Create new message
+        newMessage = { message: message, sentAt: DateTime.now().to_s, messageFrom: sender, messageTo: receiver}
+        $messageCollection.insert_one(newMessage)
+
+    end
  
 end

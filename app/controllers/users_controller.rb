@@ -198,9 +198,6 @@ class UsersController < ApplicationController
             }
         end
 
-        # stmt = "select id from user where reset_token=\"" + token + "\""
-        # data =  ActiveRecord::Base.connection.exec_query(stmt)
-
         data = $userCollection.find( { resetToken: token } ).first
 
         if data == nil 
@@ -214,9 +211,6 @@ class UsersController < ApplicationController
 
         salt = generateSalt()
         dbPassword = Base64.encode64(generateKey(password, salt)).gsub("\n",'')
-
-        # stmt = "UPDATE user SET salt=\"" + salt + "\", password=\"" + dbPassword + "\", reset_token=null where id=" + data.entries[0].fetch("id").to_s
-        # data =  ActiveRecord::Base.connection.exec_query(stmt)
 
         $userCollection.update_one( { 'email' => data['email'] }, { '$set' => { 'salt' => salt,  'password' => dbPassword, 'resetToken' => nil} } )
 
@@ -241,9 +235,6 @@ class UsersController < ApplicationController
                 time: DateTime.now() 
             }
         end
-
-        # stmt = "select password, salt from user where email=\"" + email + "\""
-        # result =  ActiveRecord::Base.connection.exec_query(stmt)
         
         result = $userCollection.find( { email: email } ).first
 
@@ -259,9 +250,6 @@ class UsersController < ApplicationController
         key = generateKey(password, result["salt"])
 
         if result["password"] == Base64.encode64(key).gsub("\n",'')
-
-            # stmt = "select first_name, last_name, email FROM user where email!=\"" + email + "\""
-            # result =  ActiveRecord::Base.connection.exec_query(stmt)
 
             friends = $userCollection.find( { 'email' => {'$ne' => email}  } )
 
