@@ -3,9 +3,15 @@ require 'openssl'
 require "base64"
 require 'securerandom'
 require 'net/smtp'
+require 'mongo'
+
+$db = Mongo::Client.new([ '127.0.0.1:27017' ], :database => 'friends_mongo')
+$userCollection = $db[:user]
+$messageCollection = $db[:message]
 
 class UsersController < ApplicationController
     skip_before_action :verify_authenticity_token
+
 
     
     def addUser
@@ -23,10 +29,9 @@ class UsersController < ApplicationController
             }
         end
 
-        stmt = "select password, salt from user where email=\"" + email + "\""
-        data =  ActiveRecord::Base.connection.exec_query(stmt)
+        data = $userCollection.find( { email: email } ).first
 
-        if data.length() != 0 
+        if data != nil 
             return render json: {
                 status: 400,
                 error: true,
@@ -38,22 +43,11 @@ class UsersController < ApplicationController
         salt = generateSalt()
         dbPassword = Base64.encode64(generateKey(password, salt)).gsub("\n",'')
 
-        # Get the last id to create id for user as our table is not auto increment on id column
-        stmt = ("select id from user order by id desc limit 1")
-        data =  ActiveRecord::Base.connection.exec_query(stmt)
-        
-        userID = 0
-        if data.length() != 0
-            userID = data.entries[0].fetch("id") + 1
-        else 
-            userID = 1
-        end
-
         #Create new user
-        stmt = "insert into user (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (" + userID.to_s + ", 0, \"" + DateTime.now().to_s + "\", \"" + email + "\", \"" + firstName + "\", \"" + lastName + "\", \"" + dbPassword + "\", \"" + salt + "\")"
-        data =  ActiveRecord::Base.connection.exec_query(stmt)
+        newUser = { createdAt: DateTime.now().to_s, email: email, firstName: firstName, lastName: lastName, password: dbPassword, salt: salt}
+        result = $userCollection.insert_one(newUser)
 
-        UserMailer.with(email: email, accountCreated: true, token: "").welcome_email.deliver_now
+        # UserMailer.with(email: email, accountCreated: true, token: "").welcome_email.deliver_now
         return render json: {
                 status: 200,
                 error: false,
@@ -63,6 +57,7 @@ class UsersController < ApplicationController
     end
 
     def login
+
         email = params[:email]
         password = params[:password]
 
@@ -74,11 +69,10 @@ class UsersController < ApplicationController
                 time: DateTime.now() 
             }
         end
-        
-        stmt = "select password, salt from user where email=\"" + email + "\""
-        result =  ActiveRecord::Base.connection.exec_query(stmt)
 
-        if result.length() == 0 
+        result = $userCollection.find( { email: email } ).first
+
+        if result == nil
             return render json: {
                 status: 400,
                 error: true,
@@ -87,9 +81,9 @@ class UsersController < ApplicationController
             }
         end
 
-        key = generateKey(password, result.entries[0].fetch("salt"))
+        key = generateKey(password, result["salt"])
 
-        if result.entries[0].fetch("password") == Base64.encode64(key).gsub("\n",'')
+        if result["password"] == Base64.encode64(key).gsub("\n",'')
             return render json: {
                 status: 200,
                 error: false,
@@ -120,10 +114,9 @@ class UsersController < ApplicationController
             }
         end
 
-        stmt = "select password, salt from user where email=\"" + email + "\""
-        data =  ActiveRecord::Base.connection.exec_query(stmt)
+        data = $userCollection.find( { email: email } ).first
 
-        if data.length() == 0 
+        if data == nil 
             return render json: {
                 status: 400,
                 error: true,
@@ -132,13 +125,13 @@ class UsersController < ApplicationController
             }
         end
 
-        key = generateKey(password, data.entries[0].fetch("salt"))
+        key = generateKey(password, data["salt"])
 
-        if data.entries[0].fetch("password") == Base64.encode64(key).gsub("\n",'')
+        if data["password"] == Base64.encode64(key).gsub("\n",'')
             salt = generateSalt()
             dbPassword = Base64.encode64(generateKey(newPassword, salt)).gsub("\n",'')
-            stmt = "UPDATE user SET salt=\"" + salt + "\", password=\"" + dbPassword + "\"  where email=\"" + email + "\""
-            data =  ActiveRecord::Base.connection.exec_query(stmt)
+
+            data = $userCollection.update_one( { 'email' => email }, { '$set' => { 'salt' => salt,  'password' => dbPassword} } )
             return render json: {
                 status: 200,
                 error: false,
@@ -167,10 +160,9 @@ class UsersController < ApplicationController
             }
         end
 
-        stmt = "select password, salt from user where email=\"" + email + "\""
-        result =  ActiveRecord::Base.connection.exec_query(stmt)
+        result = $userCollection.find( { email: email } ).first
 
-        if result.length() == 0 
+        if result == nil
             return render json: {
                 status: 400,
                 error: true,
@@ -180,15 +172,14 @@ class UsersController < ApplicationController
         end
 
         uuidNumber = SecureRandom.uuid 
-        stmt = "UPDATE user SET reset_token=\"" + uuidNumber.to_s + "\" where email=\"" + email + "\""
-        data =  ActiveRecord::Base.connection.exec_query(stmt)
-        
-        UserMailer.with(email: email, accountCreated: false, token: uuidNumber.to_s).welcome_email.deliver_now
+        data = $userCollection.update_one( { 'email' => email }, { '$set' => { 'resetToken' => uuidNumber.to_s} } )
+
+        # UserMailer.with(email: email, accountCreated: false, token: uuidNumber.to_s).welcome_email.deliver_now
 
         return render json: {
             status: 200,
             error: false,
-            message: "Password changed",
+            message: "Reset password is sent",
             time: DateTime.now() 
         }  
 
@@ -207,10 +198,12 @@ class UsersController < ApplicationController
             }
         end
 
-        stmt = "select id from user where reset_token=\"" + token + "\""
-        data =  ActiveRecord::Base.connection.exec_query(stmt)
+        # stmt = "select id from user where reset_token=\"" + token + "\""
+        # data =  ActiveRecord::Base.connection.exec_query(stmt)
 
-        if data.length() == 0 
+        data = $userCollection.find( { resetToken: token } ).first
+
+        if data == nil 
             return render json: {
                 status: 400,
                 error: true,
@@ -221,8 +214,12 @@ class UsersController < ApplicationController
 
         salt = generateSalt()
         dbPassword = Base64.encode64(generateKey(password, salt)).gsub("\n",'')
-        stmt = "UPDATE user SET salt=\"" + salt + "\", password=\"" + dbPassword + "\", reset_token=null where id=" + data.entries[0].fetch("id").to_s
-        data =  ActiveRecord::Base.connection.exec_query(stmt)
+
+        # stmt = "UPDATE user SET salt=\"" + salt + "\", password=\"" + dbPassword + "\", reset_token=null where id=" + data.entries[0].fetch("id").to_s
+        # data =  ActiveRecord::Base.connection.exec_query(stmt)
+
+        $userCollection.update_one( { 'email' => data['email'] }, { '$set' => { 'salt' => salt,  'password' => dbPassword, 'resetToken' => nil} } )
+
         return render json: {
             status: 200,
             error: false,
@@ -245,10 +242,13 @@ class UsersController < ApplicationController
             }
         end
 
-        stmt = "select password, salt from user where email=\"" + email + "\""
-        result =  ActiveRecord::Base.connection.exec_query(stmt)
+        # stmt = "select password, salt from user where email=\"" + email + "\""
+        # result =  ActiveRecord::Base.connection.exec_query(stmt)
+        
+        result = $userCollection.find( { email: email } ).first
 
-        if result.length() == 0 
+
+        if result == nil 
             return render json: {
                 status: 400,
                 error: true,
@@ -256,17 +256,19 @@ class UsersController < ApplicationController
                 time: DateTime.now() 
             }
         end
-        key = generateKey(password, result.entries[0].fetch("salt"))
+        key = generateKey(password, result["salt"])
 
-        if result.entries[0].fetch("password") == Base64.encode64(key).gsub("\n",'')
+        if result["password"] == Base64.encode64(key).gsub("\n",'')
 
-            stmt = "select first_name, last_name, email FROM user where email!=\"" + email + "\""
-            result =  ActiveRecord::Base.connection.exec_query(stmt)
+            # stmt = "select first_name, last_name, email FROM user where email!=\"" + email + "\""
+            # result =  ActiveRecord::Base.connection.exec_query(stmt)
+
+            friends = $userCollection.find( { 'email' => {'$ne' => email}  } )
 
             users = []
 
-            result.each { |item|
-                users.append({"firstName" => item.fetch("first_name"), "lastName" => item.fetch("last_name"), "email" => item.fetch("email")})
+            friends.each { |item|
+                users.append({"firstName" => item["firstName"], "lastName" => item["lastName"], "email" => item["email"]})
             }
 
 

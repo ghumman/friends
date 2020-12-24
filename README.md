@@ -1,21 +1,24 @@
 ```
 git init
-git remote add ruby git@github.com:ghumman/friends.git
+git remote add ruby-mongo git@github.com:ghumman/friends.git
 git add .
 git commit -m "Initial commit"
-git push ruby master:ruby
+git push ruby-mongo master:ruby-mongo
 ```
 
 ## Starting the server
 ```
 rails server
 ```
-## Ruby issues with mysql
-Had to recreate project using command
+
+## Migration from Mysql to MongoDB
+Use following guide to create a new project for Ruby with MongoDB or migration from Relational DBs to MongoDB
 ```
-rails new ruby -d mysql
+https://docs.mongodb.com/mongoid/current/tutorials/getting-started-rails/
 ```
-Following line resolved the issue of ruby gems like mysql not getting installed
+
+## For Quick Start MongoDB commands for Ruby
 ```
-sudo apt install default-libmysqlclient-dev
+https://docs.mongodb.com/ruby-driver/v2.2/quick-start/
 ```
+
