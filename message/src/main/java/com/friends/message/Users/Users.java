@@ -1,7 +1,5 @@
-package com.friends.message.User;
+package com.friends.message.Users;
 
-
-import java.sql.Timestamp;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -18,12 +16,12 @@ import lombok.Data;
 
 @Entity
 @Data
-public class User {
+public class Users {
 
     public enum AuthType {regular, special};
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; 
     
     @NotNull
@@ -32,7 +30,7 @@ public class User {
     private String lastName; 
 
     @NotNull
-    private Timestamp createdAt;
+    private Date createdAt;
 
     private String salt;
     private String password; 
@@ -48,7 +46,7 @@ public class User {
     @NotNull
     private AuthType authType; 
 
-    User(String fName, String lName, String newEmail , String pwd, String auth, String tkn) {
+    Users(String fName, String lName, String newEmail , String pwd, String auth, String tkn) {
 
         if (auth.equals(AuthType.regular.toString())) {
             salt = PasswordUtils.getSalt(30);
@@ -62,11 +60,10 @@ public class User {
         firstName = fName; 
         lastName = lName; 
         email = newEmail; 
-        Date date = new Date();
-        createdAt = new Timestamp(date.getTime()); 
+        createdAt = new Date();;
 
     }
 
-    User() {}
+    Users() {}
 
 }

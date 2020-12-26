@@ -1,9 +1,9 @@
-package com.friends.message.User;
+package com.friends.message.Users;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,7 +30,7 @@ public class UserController {
     private UserResponse userResponse; 
 
     @Autowired 
-    private UserRepository userRepository;
+    private UsersRepository userRepository;
 
     @Autowired
     private JavaMailSender emailSender;
@@ -87,7 +87,7 @@ public class UserController {
 
         if (userResponse.getError()) {
             userResponse.setStatus(400);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            userResponse.setTime(new Date());
             return ResponseEntity.ok(userResponse);
         }
 
@@ -95,7 +95,7 @@ public class UserController {
 
         if (userRepository.findByEmail(email) == null) {
 
-            User newUser = new User(firstName, lastName, email, password, authType, token); 
+            Users newUser = new Users(firstName, lastName, email, password, authType, token); 
             userRepository.save(newUser); 
 
             // send confirmation email
@@ -109,7 +109,7 @@ public class UserController {
             userResponse.setMessage("User Created");
             userResponse.setStatus(200);
             userResponse.setError(false);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            userResponse.setTime(new Date());
             return ResponseEntity.ok(userResponse);
         }
 
@@ -117,7 +117,7 @@ public class UserController {
             userResponse.setMessage("User Already Exists");
             userResponse.setStatus(400);
             userResponse.setError(true);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            userResponse.setTime(new Date());
             return ResponseEntity.ok(userResponse);
         }
     }
@@ -134,14 +134,14 @@ public class UserController {
 
             userResponse = new UserResponse(); 
 
-            User currentUser = userRepository.findByEmail(email);
+            Users currentUser = userRepository.findByEmail(email);
 
             if (currentUser == null) {
 
                 userResponse.setMessage("User Does Not Exist");
                 userResponse.setStatus(400);
                 userResponse.setError(true);
-                userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                userResponse.setTime(new Date());
                 return ResponseEntity.ok(userResponse);
             }
 
@@ -158,13 +158,13 @@ public class UserController {
                         userResponse.setMessage("Logged In");
                         userResponse.setStatus(200);
                         userResponse.setError(false);
-                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        userResponse.setTime(new Date());
                         return ResponseEntity.ok(userResponse);
                     } else {
                         userResponse.setMessage("Login Failed");
                         userResponse.setStatus(400);
                         userResponse.setError(true);
-                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        userResponse.setTime(new Date());
                         return ResponseEntity.ok(userResponse);
                     }
             
@@ -177,20 +177,20 @@ public class UserController {
                         userResponse.setMessage("Logged In");
                         userResponse.setStatus(200);
                         userResponse.setError(false);
-                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        userResponse.setTime(new Date());
                         return ResponseEntity.ok(userResponse);
                     } else {
                         userResponse.setMessage("Login Failed");
                         userResponse.setStatus(400);
                         userResponse.setError(true);
-                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        userResponse.setTime(new Date());
                         return ResponseEntity.ok(userResponse);
                     }
                 } else {
                     userResponse.setMessage("Authentication Type not right");
                     userResponse.setStatus(400);
                     userResponse.setError(true);
-                    userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    userResponse.setTime(new Date());
                     return ResponseEntity.ok(userResponse);
                 }
 
@@ -200,7 +200,7 @@ public class UserController {
             userResponse.setMessage(e.toString());
             userResponse.setStatus(400);
             userResponse.setError(true);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            userResponse.setTime(new Date());
             return ResponseEntity.ok(userResponse);
         }
     }
@@ -217,14 +217,14 @@ public class UserController {
 
             userResponse = new UserResponse(); 
 
-            User currentUser = userRepository.findByEmail(email);
+            Users currentUser = userRepository.findByEmail(email);
 
             if (currentUser == null) {
 
                 userResponse.setMessage("User Does Not Exist");
                 userResponse.setStatus(400);
                 userResponse.setError(true);
-                userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                userResponse.setTime(new Date());
                 return ResponseEntity.ok(userResponse);
             }
 
@@ -235,7 +235,7 @@ public class UserController {
                     userResponse.setMessage("Logged in using OAuth");
                     userResponse.setStatus(400);
                     userResponse.setError(true);
-                    userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    userResponse.setTime(new Date());
                     return ResponseEntity.ok(userResponse);
                 } 
 
@@ -258,13 +258,13 @@ public class UserController {
                         userResponse.setMessage("Password changed");
                         userResponse.setStatus(200);
                         userResponse.setError(false);
-                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        userResponse.setTime(new Date());
                         return ResponseEntity.ok(userResponse);
                     } else {
                         userResponse.setMessage("Original password not right");
                         userResponse.setStatus(400);
                         userResponse.setError(true);
-                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        userResponse.setTime(new Date());
                         return ResponseEntity.ok(userResponse);
                     }
             
@@ -274,7 +274,7 @@ public class UserController {
                     userResponse.setMessage("Authentication Type not right");
                     userResponse.setStatus(400);
                     userResponse.setError(true);
-                    userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    userResponse.setTime(new Date());
                     return ResponseEntity.ok(userResponse);
                 }
 
@@ -284,7 +284,7 @@ public class UserController {
             userResponse.setMessage(e.toString());
             userResponse.setStatus(400);
             userResponse.setError(true);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            userResponse.setTime(new Date());
             return ResponseEntity.ok(userResponse);
         }
     }
@@ -295,14 +295,14 @@ public class UserController {
         HttpServletRequest request
     ) {
         userResponse = new UserResponse(); 
-        User currentUser = userRepository.findByEmail(email); 
+        Users currentUser = userRepository.findByEmail(email); 
 
-        if (currentUser == null || currentUser.getAuthType() == User.AuthType.special) {
+        if (currentUser == null || currentUser.getAuthType() == Users.AuthType.special) {
 
             userResponse.setMessage("No account or logged in using social media");
             userResponse.setStatus(400);
             userResponse.setError(true);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            userResponse.setTime(new Date());
             return ResponseEntity.ok(userResponse);
         } else {
 
@@ -324,7 +324,7 @@ public class UserController {
             userResponse.setMessage("Reset password is sent");
             userResponse.setStatus(200);
             userResponse.setError(false);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            userResponse.setTime(new Date());
             return ResponseEntity.ok(userResponse);
 
         }
@@ -336,14 +336,14 @@ public class UserController {
         @RequestParam String token,
         @RequestParam String password
     ) {
-        Optional<User> currentUserOpt = userRepository.findByResetToken(token);
-        User currentUser = currentUserOpt.get(); 
+        Optional<Users> currentUserOpt = userRepository.findByResetToken(token);
+        Users currentUser = currentUserOpt.get(); 
 
 		if (currentUser == null) {
             userResponse.setMessage("Token is not valid");
             userResponse.setStatus(400);
             userResponse.setError(true);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            userResponse.setTime(new Date());
             return ResponseEntity.ok(userResponse);
         } else {
             String salt = PasswordUtils.getSalt(30);
@@ -357,7 +357,7 @@ public class UserController {
             userResponse.setMessage("Password successfully reset");
             userResponse.setStatus(200);
             userResponse.setError(false);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            userResponse.setTime(new Date());
             return ResponseEntity.ok(userResponse);
         }
     }
@@ -373,14 +373,14 @@ public class UserController {
 
             userResponse = new UserResponse(); 
 
-            User currentUser = userRepository.findByEmail(email);
+            Users currentUser = userRepository.findByEmail(email);
 
             if (currentUser == null) {
 
                 userResponse.setMessage("User Does Not Exist");
                 userResponse.setStatus(400);
                 userResponse.setError(true);
-                userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                userResponse.setTime(new Date());
                 return ResponseEntity.ok(userResponse);
             }
 
@@ -394,10 +394,10 @@ public class UserController {
             
                     if(passwordMatch) 
                     {
-                        List<User> users = userRepository.findFriendsWithCustomQuery(currentUser);
+                        List<Users> users = userRepository.findFriendsWithCustomQuery(currentUser);
                         List<UsersAll> customUsers = new ArrayList<>(); 
 
-                        for (User user : users) {
+                        for (Users user : users) {
                             UsersAll customUser = new UsersAll(); 
                             customUser.setEmail(user.getEmail());
                             customUser.setFirstName(user.getFirstName());
@@ -410,13 +410,13 @@ public class UserController {
                         userResponse.setMessage("Friends attached");
                         userResponse.setStatus(200);
                         userResponse.setError(false);
-                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        userResponse.setTime(new Date());
                         return ResponseEntity.ok(userResponse);
                     } else {
                         userResponse.setMessage("Login Failed");
                         userResponse.setStatus(400);
                         userResponse.setError(true);
-                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        userResponse.setTime(new Date());
                         return ResponseEntity.ok(userResponse);
                     }
             
@@ -426,10 +426,10 @@ public class UserController {
             
                     if(passwordMatch) 
                     {
-                        List<User> users = userRepository.findFriendsWithCustomQuery(currentUser);
+                        List<Users> users = userRepository.findFriendsWithCustomQuery(currentUser);
                         List<UsersAll> customUsers = new ArrayList<>(); 
 
-                        for (User user : users) {
+                        for (Users user : users) {
                             UsersAll customUser = new UsersAll(); 
                             customUser.setEmail(user.getEmail());
                             customUser.setFirstName(user.getFirstName());
@@ -442,20 +442,20 @@ public class UserController {
                         userResponse.setMessage("Friends attached");
                         userResponse.setStatus(200);
                         userResponse.setError(false);
-                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        userResponse.setTime(new Date());
                         return ResponseEntity.ok(userResponse);
                     } else {
                         userResponse.setMessage("Login Failed");
                         userResponse.setStatus(400);
                         userResponse.setError(true);
-                        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        userResponse.setTime(new Date());
                         return ResponseEntity.ok(userResponse);
                     }
                 } else {
                     userResponse.setMessage("Authentication Type not right");
                     userResponse.setStatus(400);
                     userResponse.setError(true);
-                    userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    userResponse.setTime(new Date());
                     return ResponseEntity.ok(userResponse);
                 }
 
@@ -465,7 +465,7 @@ public class UserController {
             userResponse.setMessage(e.toString());
             userResponse.setStatus(400);
             userResponse.setError(true);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            userResponse.setTime(new Date());
             return ResponseEntity.ok(userResponse);
         }
     }

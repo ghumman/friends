@@ -1,6 +1,6 @@
 package com.friends.message.Message;
 
-import java.sql.Timestamp;
+
 import java.util.Date;
 
 import javax.persistence.Entity;
@@ -10,7 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.validation.constraints.NotNull;
 
-import com.friends.message.User.User;
+import com.friends.message.Users.Users;
 
 import lombok.Data;
 
@@ -19,28 +19,27 @@ import lombok.Data;
 public class Message {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; 
     
     @NotNull
     private String message; 
     @NotNull
     @ManyToOne
-    private User messageFrom;
+    private Users messageFrom;
     @NotNull
     @ManyToOne
-    private User messageTo;
+    private Users messageTo;
 
     @NotNull
-    private Timestamp sentAt;
+    private Date sentAt;
 
-    Message(String message, User messageFrom, User messageTo) {
+    Message(String message, Users messageFrom, Users messageTo) {
 
         this.message = message; 
         this.messageFrom = messageFrom; 
-        this.messageTo = messageTo; 
-        Date date = new Date();
-        sentAt= new Timestamp(date.getTime()); 
+        this.messageTo = messageTo;
+        sentAt= new Date();
     }
 
     Message() {}

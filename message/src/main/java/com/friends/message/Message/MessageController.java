@@ -1,11 +1,11 @@
 package com.friends.message.Message;
 
-import com.friends.message.User.PasswordUtils;
-import com.friends.message.User.User;
-import com.friends.message.User.UserRepository;
+import com.friends.message.Users.PasswordUtils;
+import com.friends.message.Users.Users;
+import com.friends.message.Users.UsersRepository;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin(origins = "http://localhost:3000")
 public class MessageController {
     @Autowired
-    private UserRepository userRepository; 
+    private UsersRepository userRepository; 
 
     @Autowired
     private MessageRepository messageRepository; 
@@ -41,22 +41,22 @@ public class MessageController {
 
             messageResponse = new MessageResponse(); 
 
-            User sendUser = userRepository.findByEmail(messageFromEmail);
-            User receiveUser = userRepository.findByEmail(messageToEmail);
+            Users sendUser = userRepository.findByEmail(messageFromEmail);
+            Users receiveUser = userRepository.findByEmail(messageToEmail);
 
             if (sendUser == null) {
 
                 messageResponse.setMessage("Sender Does Not Exist");
                 messageResponse.setStatus(400);
                 messageResponse.setError(true);
-                messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                messageResponse.setTime(new Date());
                 return ResponseEntity.ok(messageResponse);
             } 
             else if (receiveUser == null) {
                 messageResponse.setMessage("Receiver Does Not Exist");
                 messageResponse.setStatus(400);
                 messageResponse.setError(true);
-                messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                messageResponse.setTime(new Date());
                 return ResponseEntity.ok(messageResponse);
             }
             else {
@@ -73,13 +73,13 @@ public class MessageController {
                         messageResponse.setMessage("Message sent");
                         messageResponse.setStatus(200);
                         messageResponse.setError(false);
-                        messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        messageResponse.setTime(new Date());
                         return ResponseEntity.ok(messageResponse);
                     } else {
                         messageResponse.setMessage("Login Failed");
                         messageResponse.setStatus(400);
                         messageResponse.setError(true);
-                        messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        messageResponse.setTime(new Date());
                         return ResponseEntity.ok(messageResponse);
                     }
             
@@ -93,20 +93,20 @@ public class MessageController {
                         messageResponse.setMessage("Message sent");
                         messageResponse.setStatus(200);
                         messageResponse.setError(false);
-                        messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        messageResponse.setTime(new Date());
                         return ResponseEntity.ok(messageResponse);
                     } else {
                         messageResponse.setMessage("Login Failed");
                         messageResponse.setStatus(400);
                         messageResponse.setError(true);
-                        messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        messageResponse.setTime(new Date());
                         return ResponseEntity.ok(messageResponse);
                     }
                 } else {
                     messageResponse.setMessage("Authentication Type not right");
                     messageResponse.setStatus(400);
                     messageResponse.setError(true);
-                    messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    messageResponse.setTime(new Date());
                     return ResponseEntity.ok(messageResponse);
                 }
 
@@ -116,13 +116,13 @@ public class MessageController {
             messageResponse.setMessage(e.toString());
             messageResponse.setStatus(400);
             messageResponse.setError(true);
-            messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            messageResponse.setTime(new Date());
             return ResponseEntity.ok(messageResponse);
         }
 
     }
 
-    public void saveMessage (String message, User sendUser, User receiveUser) {
+    public void saveMessage (String message, Users sendUser, Users receiveUser) {
         Message msg = new Message(message, sendUser, receiveUser) ; 
         messageRepository.save(msg);        
     }
@@ -139,22 +139,22 @@ public class MessageController {
 
             messageResponse = new MessageResponse(); 
 
-            User user = userRepository.findByEmail(userEmail);
-            User friend = userRepository.findByEmail(friendEmail);
+            Users user = userRepository.findByEmail(userEmail);
+            Users friend = userRepository.findByEmail(friendEmail);
 
             if (user == null) {
 
                 messageResponse.setMessage("Sender Does Not Exist");
                 messageResponse.setStatus(400);
                 messageResponse.setError(true);
-                messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                messageResponse.setTime(new Date());
                 return ResponseEntity.ok(messageResponse);
             } 
             else if (friend == null) {
                 messageResponse.setMessage("Receiver Does Not Exist");
                 messageResponse.setStatus(400);
                 messageResponse.setError(true);
-                messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                messageResponse.setTime(new Date());
                 return ResponseEntity.ok(messageResponse);
             }
             else {
@@ -184,13 +184,13 @@ public class MessageController {
                         messageResponse.setMessage("Messages attached");
                         messageResponse.setStatus(200);
                         messageResponse.setError(false);
-                        messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        messageResponse.setTime(new Date());
                         return ResponseEntity.ok(messageResponse);
                     } else {
                         messageResponse.setMessage("Login Failed");
                         messageResponse.setStatus(400);
                         messageResponse.setError(true);
-                        messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        messageResponse.setTime(new Date());
                         return ResponseEntity.ok(messageResponse);
                     }
             
@@ -217,20 +217,20 @@ public class MessageController {
                         messageResponse.setMessage("Messages attached");
                         messageResponse.setStatus(200);
                         messageResponse.setError(false);
-                        messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        messageResponse.setTime(new Date());
                         return ResponseEntity.ok(messageResponse);
                     } else {
                         messageResponse.setMessage("Login Failed");
                         messageResponse.setStatus(400);
                         messageResponse.setError(true);
-                        messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                        messageResponse.setTime(new Date());
                         return ResponseEntity.ok(messageResponse);
                     }
                 } else {
                     messageResponse.setMessage("Authentication Type not right");
                     messageResponse.setStatus(400);
                     messageResponse.setError(true);
-                    messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+                    messageResponse.setTime(new Date());
                     return ResponseEntity.ok(messageResponse);
                 }
 
@@ -240,7 +240,7 @@ public class MessageController {
             messageResponse.setMessage(e.toString());
             messageResponse.setStatus(400);
             messageResponse.setError(true);
-            messageResponse.setTime(new Timestamp(System.currentTimeMillis()));
+            messageResponse.setTime(new Date());
             return ResponseEntity.ok(messageResponse);
         }
     }

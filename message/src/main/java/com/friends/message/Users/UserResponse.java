@@ -1,13 +1,14 @@
-package com.friends.message.User;
+package com.friends.message.Users;
 
-import java.sql.Timestamp;
+import java.util.Date;
+
 import java.util.List;
 
 import lombok.Data;
 
 @Data
 public class UserResponse {
-    private Timestamp time; 
+    private Date time;
     private int status;
     private Boolean error; 
     private String message; 

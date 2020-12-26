@@ -1,4 +1,4 @@
-package com.friends.message.User;
+package com.friends.message.Users;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;

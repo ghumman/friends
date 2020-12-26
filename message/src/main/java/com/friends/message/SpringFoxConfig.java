@@ -22,7 +22,7 @@ package com.friends.message;
 
 import com.fasterxml.classmate.TypeResolver;
 import com.friends.message.Message.MessageController;
-import com.friends.message.User.UserController;
+import com.friends.message.Users.UserController;
 
 // import org.joda.time.LocalDate;
 import org.springframework.beans.factory.annotation.Autowired;
