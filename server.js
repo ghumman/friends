@@ -9,17 +9,7 @@ var nodemailer = require('nodemailer');
 // create application/x-www-form-urlencoded parser
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
-var mysql = require('mysql');
 const { Client } = require('pg')
-
-
-// var con = mysql.createConnection({
-//   host: "localhost",
-//   user: "ghumman",
-//   password: "ghumman",
-//   database : "friends_mysql"
-// });
-
 
 const con = new Client({
 	user: 'postgres',
@@ -28,7 +18,7 @@ const con = new Client({
 	password: 'postgres',
 	port: 5432,
   })
-// con.connect()
+
 var transporter = nodemailer.createTransport({
 	service: 'gmail',
 	auth: {
@@ -63,7 +53,6 @@ app.post('/add-user', urlencodedParser, function (req, res) {
 		return res.send({'status': 400, 'error': true, 'message': 'Required data missing', 'time': new Date(Date.now())} );
 	}
 
-	// var sqlCheckUser = mysql.format("select password, salt from user where email=?", [email]);
 	const sqlCheckUser = {
 		// give the query a unique name
 		name: 'fetch-user',
@@ -78,7 +67,6 @@ app.post('/add-user', urlencodedParser, function (req, res) {
 			const salt = generateSalt();
 			// generate database password
 			const dbPassword = generateKey(password, salt);
-			// var sqlGetID = mysql.format("select id from user order by id desc limit 1");
 			const sqlGetID = {
 				// give the query a unique name
 				name: 'fetch-id',
@@ -92,7 +80,6 @@ app.post('/add-user', urlencodedParser, function (req, res) {
 				}
 
 				// create new user using id, auth_type, created_at, email, firstName, lastName, dbPassword, salt 
-				// var sqlCreateUser = mysql.format("insert into user (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [newUserID, 0, new Date(Date.now()) , email, firstName, lastName, dbPassword, salt]);
 				const sqlCreateUser = {
 					// give the query a unique name
 					name: 'create-user',
@@ -152,7 +139,6 @@ app.post('/change-password', urlencodedParser, function (req, res) {
 		return res.send({'status': 400, 'error': true, 'message': 'Required data missing', 'time': new Date(Date.now())} );
 	}
 
-	// var sqlLogin = mysql.format("select password, salt from users where email=?", [email]);
 	const sqlLogin = {
 		// give the query a unique name
 		name: 'fetch-user',
@@ -173,7 +159,6 @@ app.post('/change-password', urlencodedParser, function (req, res) {
 			const dbPassword = generateKey(newPassword, salt);
 			
 			// update user with newly generated salt and dbPassword
-			// var sqlUpdateUser = mysql.format("UPDATE users SET salt=?, password=? where email=?", [salt, dbPassword, email]);
 			const sqlUpdateUser = {
 				// give the query a unique name
 				name: 'update-user',
@@ -198,7 +183,6 @@ app.post('/forgot-password', urlencodedParser, function (req, res) {
 		return res.send({'status': 400, 'error': true, 'message': 'Email is required', 'time': new Date(Date.now())} );
 	}
 
-	// var sqlLogin = mysql.format("select password, salt from users where email=?", [email]);
 	const sqlLogin = {
 		// give the query a unique name
 		name: 'fetch-user',
@@ -212,7 +196,6 @@ app.post('/forgot-password', urlencodedParser, function (req, res) {
 		}
 
 		var uuidNumber = uuidv4();
-		// var sqlUpdateUser = mysql.format("UPDATE users SET reset_token=? where email=?", [uuidNumber, email]);
 		const sqlUpdateUser = {
 			// give the query a unique name
 			name: 'update-user',
@@ -237,7 +220,6 @@ app.post('/reset-password', urlencodedParser, function (req, res) {
 	if (token == undefined || password == undefined) {
 		return res.send({'status': 400, 'error': true, 'message': 'Required data missing', 'time': new Date(Date.now())} );
 	}
-	// var sqlCheckToken = mysql.format("select id from users where reset_token=?", [token]);
 	const sqlCheckToken = {
 		// give the query a unique name
 		name: 'fetch-user2',
@@ -254,7 +236,6 @@ app.post('/reset-password', urlencodedParser, function (req, res) {
 			// generate database password
 			const dbPassword = generateKey(password, salt);
 			// update user using salt, password, token using id
-			// var sqlUpdateUser = mysql.format("UPDATE users SET salt=?, password=?, reset_token=? where id=?", [salt, dbPassword, null, resultsCheckToken[0].id]);
 			const sqlUpdateUser = {
 				// give the query a unique name
 				name: 'update-user2',
@@ -279,7 +260,6 @@ app.post('/all-friends', urlencodedParser, function (req, res) {
 		return res.send({'status': 400, 'error': true, 'message': 'Email or Password missing', 'time': new Date(Date.now())} );
 	}
 
-	// var sqlCheckUser = mysql.format("select password, salt from users where email=?", [email]);
 	const sqlCheckUser = {
 		// give the query a unique name
 		name: 'fetch-user3',
@@ -294,7 +274,6 @@ app.post('/all-friends', urlencodedParser, function (req, res) {
 
 		const key = generateKey(password, resultsCheckUser.rows[0].salt);
 		if (resultsCheckUser.rows[0].password === key) {
-			// var sqlFriends = mysql.format("select first_name, last_name, email FROM users where email!=?", [email]);
 			const sqlFriends = {
 				// give the query a unique name
 				name: 'fetch-friends',
@@ -326,7 +305,6 @@ app.post('/send-message', urlencodedParser, function (req, res) {
 	if (message == undefined || messageFromEmail == undefined || messageToEmail == undefined || password == undefined) {
 		return res.send({'status': 400, 'error': true, 'message': 'Required data missing', 'time': new Date(Date.now())} );
 	}
-	// var sqlCheckSender = mysql.format("select password, salt, id from users where email=?", [messageFromEmail]);
 	const sqlCheckSender = {
 		// give the query a unique name
 		name: 'fetch-sender',
@@ -341,7 +319,6 @@ app.post('/send-message', urlencodedParser, function (req, res) {
 
 		const key = generateKey(password, resultsCheckSender.rows[0].salt);
 		if (resultsCheckSender.rows[0].password === key) {
-			// var sqlCheckReceiverExist = mysql.format("select password, salt, id from users where email=?", [messageToEmail]);
 			const sqlCheckReceiverExist = {
 				// give the query a unique name
 				name: 'fetch-receiver',
@@ -373,7 +350,6 @@ app.post('/messages-user-and-friend', urlencodedParser, function (req, res) {
 		return res.send({'status': 400, 'error': true, 'message': 'Required data missing', 'time': new Date(Date.now())} );
 	}
 
-	// var sqlCheckUser = mysql.format("select password, salt, id from users where email=?", [userEmail]);
 	const sqlCheckUser = {
 		// give the query a unique name
 		name: 'fetch-user5',
@@ -388,7 +364,6 @@ app.post('/messages-user-and-friend', urlencodedParser, function (req, res) {
 
 		const key = generateKey(password, resultsCheckUser.rows[0].salt);
 		if (resultsCheckUser.rows[0].password === key) {
-			// var sqlCheckReceiverExist = mysql.format("select password, salt, id from users where email=?", [friendEmail]);
 			const sqlCheckReceiverExist = {
 				// give the query a unique name
 				name: 'fetch-friends2',
@@ -401,7 +376,6 @@ app.post('/messages-user-and-friend', urlencodedParser, function (req, res) {
 					return res.send({'status': 400, 'error': true, 'message': 'Receiver Does Not Exist', 'time': new Date(Date.now())} );
 				}
 				// Sender credentials are correct and both sender and receiver exists
-				// var sqlFriendMessages = mysql.format("SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = ? and m.message_to_id = ?) or (m.message_from_id = ? and m.message_to_id = ?) order by m.sent_at", [resultsCheckUser[0].id, resultsCheckReceiverExist[0].id, resultsCheckReceiverExist[0].id, resultsCheckUser[0].id]);
 				const sqlFriendMessages = {
 					// give the query a unique name
 					name: 'fetch-friend-messages',
@@ -467,7 +441,6 @@ const sendNewUserEmail  = (email, accountCreated, token) => {
 
 const saveMessage = (message, senderID, receiverID) => {
 
-	// var sqlGetID = mysql.format("SELECT id FROM message ORDER BY id DESC LIMIT 1");
 	const sqlGetID = {
 		// give the query a unique name
 		name: 'fetch-id2',
@@ -480,7 +453,6 @@ const saveMessage = (message, senderID, receiverID) => {
 		if (resultsGetID.rows.length > 0) {
 			newMessageID = resultsGetID.rows[0].id + 1;
 		}
-		// var sqlSendMessage = mysql.format("insert into message (id, message, sent_at, message_from_id, message_to_id) VALUES (?, ?, ?, ?, ?)", [newMessageID, message, new Date(Date.now()), senderID, receiverID]);
 		const sqlSendMessage = {
 			// give the query a unique name
 			name: 'fetch-insert-message',
