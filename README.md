@@ -1,10 +1,10 @@
 ```
 git init
-git remote add python git@github.com:ghumman/friends.git
+git remote add python-psql git@github.com:ghumman/friends.git
 touch README.md
 git add README.md
 git commit -m "Initial commit"
-git push python master:python
+git push python-psql master:python-psql
 ```
 
 ## Installing Django

@@ -2,27 +2,20 @@ import flask
 from flask import request
 import datetime; 
 
-from flaskext.mysql import MySQL
 from hashlib import pbkdf2_hmac
 import binascii
 import base64
 from random import randrange
 import smtplib, ssl
 import uuid
+import psycopg2
 
+conn = psycopg2.connect(database="friends_psql", user="postgres", password="postgres", host="127.0.0.1", port="5432")
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
 
-mysql = MySQL()
-app.config['MYSQL_DATABASE_USER'] = 'ghumman'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'ghumman'
-app.config['MYSQL_DATABASE_DB'] = 'friends_mysql'
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
-mysql.init_app(app)
-
-conn = mysql.connect()
-cursor =conn.cursor()
+cursor = conn.cursor()
 
 @app.route('/add-user', methods=['POST'])
 def addUser():
@@ -35,8 +28,8 @@ def addUser():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt from user where email=%s")
-    data = (email)
+    stmt = ("select password, salt from users where email=%s")
+    data = (email,)
     cursor.execute(stmt, data)
     data = cursor.fetchone()
 
@@ -50,7 +43,7 @@ def addUser():
     dbPassword = base64.b64encode(generateKey(password, salt)).decode("utf-8") 
 
     # Get the last id to create id for user as our table is not auto increment on id column
-    stmt = ("select id from user order by id desc limit 1")
+    stmt = ("select id from users order by id desc limit 1")
     cursor.execute(stmt)
     data = cursor.fetchone()
     userID = 0
@@ -60,12 +53,12 @@ def addUser():
         userID = 1
 
     # Create the new user
-    stmt = ("insert into user (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
-    data = (userID, 0, datetime.datetime.now() , email, firstName, lastName, dbPassword, salt)
+    stmt = ("insert into users (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
+    data = (userID, 0, datetime.datetime.now() , email, firstName, lastName, dbPassword, salt,)
     cursor.execute(stmt, data)
     conn.commit()
 
-    sendNewUserEmail(email, True, "")
+    # sendNewUserEmail(email, True, "")
 
     resp = {'status': 200, 'error': False, 'message': 'User Created', 'time': datetime.datetime.now()} 
     return resp
@@ -79,8 +72,8 @@ def login():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Email or Password missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt from user where email=%s")
-    data = (email)
+    stmt = ("select password, salt from users where email=%s")
+    data = (email,)
     cursor.execute(stmt, data)
     data = cursor.fetchone()
 
@@ -110,8 +103,8 @@ def changePassword():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt from user where email=%s")
-    data = (email)
+    stmt = ("select password, salt from users where email=%s")
+    data = (email,)
     cursor.execute(stmt, data)
     data = cursor.fetchone()
 
@@ -127,8 +120,8 @@ def changePassword():
     if base64.b64encode(key).decode("utf-8") == data[0]:
         salt = generateSalt()
         dbPassword = base64.b64encode(generateKey(newPassword, salt)).decode("utf-8") 
-        stmt = ("UPDATE user SET salt=%s, password=%s where email=%s")
-        data = (salt, dbPassword, email)
+        stmt = ("UPDATE users SET salt=%s, password=%s where email=%s")
+        data = (salt, dbPassword, email,)
         cursor.execute(stmt, data)
         conn.commit()
         
@@ -146,8 +139,8 @@ def forgotPassword():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Email is required', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt from user where email=%s")
-    data = (email)
+    stmt = ("select password, salt from users where email=%s")
+    data = (email,)
     cursor.execute(stmt, data)
     data = cursor.fetchone()
 
@@ -159,12 +152,12 @@ def forgotPassword():
         return resp
 
     uuidNumber = uuid.uuid4()
-    stmt = ("UPDATE user SET reset_token=%s where email=%s")
-    data = (str(uuidNumber), email)
+    stmt = ("UPDATE users SET reset_token=%s where email=%s")
+    data = (str(uuidNumber), email,)
     cursor.execute(stmt, data)
     conn.commit()
 
-    sendNewUserEmail(email, False, str(uuidNumber))
+    # sendNewUserEmail(email, False, str(uuidNumber))
     
     resp = {'status': 200, 'error': False, 'message': 'Reset password is sent', 'time': datetime.datetime.now()} 
     return resp
@@ -178,8 +171,8 @@ def resetPassword():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select id from user where reset_token=%s")
-    data = (token)
+    stmt = ("select id from users where reset_token=%s")
+    data = (token,)
     cursor.execute(stmt, data)
     data = cursor.fetchone()
 
@@ -193,8 +186,8 @@ def resetPassword():
 
     salt = generateSalt()
     dbPassword = base64.b64encode(generateKey(password, salt)).decode("utf-8") 
-    stmt = ("UPDATE user SET salt=%s, password=%s, reset_token=%s where id=%s")
-    data = (salt, dbPassword, None, userID)
+    stmt = ("UPDATE users SET salt=%s, password=%s, reset_token=%s where id=%s")
+    data = (salt, dbPassword, None, userID,)
     cursor.execute(stmt, data)
     conn.commit()
     
@@ -210,8 +203,8 @@ def allFriends():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Email or Password missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt from user where email=%s")
-    data = (email)
+    stmt = ("select password, salt from users where email=%s")
+    data = (email,)
     cursor.execute(stmt, data)
     data = cursor.fetchone()
 
@@ -225,8 +218,8 @@ def allFriends():
     key = generateKey(password, data[1])
     # check if new created hashed key equals to password saved in database
     if base64.b64encode(key).decode("utf-8") == data[0]:
-        stmt = ("select first_name, last_name, email FROM user where email!=%s")
-        data = (email)
+        stmt = ("select first_name, last_name, email FROM users where email!=%s")
+        data = (email,)
         cursor.execute(stmt, data)
         rows = cursor.fetchall()
         users = []
@@ -250,8 +243,8 @@ def sendMessage():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt, id from user where email=%s")
-    data = (messageFromEmail)
+    stmt = ("select password, salt, id from users where email=%s")
+    data = (messageFromEmail,)
     cursor.execute(stmt, data)
     dataSender = cursor.fetchone()
 
@@ -267,8 +260,8 @@ def sendMessage():
     if base64.b64encode(key).decode("utf-8") == dataSender[0]:
 
         # Check if receiver exists
-        stmt = ("select password, salt, id from user where email=%s")
-        data = (messageToEmail)
+        stmt = ("select password, salt, id from users where email=%s")
+        data = (messageToEmail,)
         cursor.execute(stmt, data)
         dataReceiver = cursor.fetchone()
 
@@ -298,8 +291,8 @@ def messagesUserAndFriend():
     except: 
         resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
         return resp
-    stmt = ("select password, salt, id from user where email=%s")
-    data = (userEmail)
+    stmt = ("select password, salt, id from users where email=%s")
+    data = (userEmail,)
     cursor.execute(stmt, data)
     dataSender = cursor.fetchone()
 
@@ -315,8 +308,8 @@ def messagesUserAndFriend():
     if base64.b64encode(key).decode("utf-8") == dataSender[0]:
 
         # Check if receiver exists
-        stmt = ("select password, salt, id from user where email=%s")
-        data = (friendEmail)
+        stmt = ("select password, salt, id from users where email=%s")
+        data = (friendEmail,)
         cursor.execute(stmt, data)
         dataReceiver = cursor.fetchone()
 
@@ -328,7 +321,7 @@ def messagesUserAndFriend():
             return resp
         
         stmt = ("SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = %s and m.message_to_id = %s) or (m.message_from_id = %s and m.message_to_id = %s) order by m.sent_at")
-        data = (dataSender[2], dataReceiver[2], dataReceiver[2], dataSender[2])
+        data = (dataSender[2], dataReceiver[2], dataReceiver[2], dataSender[2],)
         cursor.execute(stmt, data)
         rows = cursor.fetchall()
         messages = []
@@ -357,7 +350,7 @@ def saveMessage(message, senderID, receiverID):
         messageID = data[0] + 1
         
     stmt = ("insert into message (id, message, sent_at, message_from_id, message_to_id) VALUES (%s, %s, %s, %s, %s)")
-    data = (messageID, message, datetime.datetime.now() , senderID, receiverID)
+    data = (messageID, message, datetime.datetime.now() , senderID, receiverID,)
     cursor.execute(stmt, data)
     conn.commit()
     
