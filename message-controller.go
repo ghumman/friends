@@ -28,7 +28,7 @@ func sendMessage(w http.ResponseWriter, r *http.Request) {
 	var tempSenderID, tempReceiverID, tempSenderAuthType, tempReceiverAuthType sql.NullInt64
 	resp := MessageResponse{}
 
-	resultSenderError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=?", values.Get("messageFromEmail")).Scan(
+	resultSenderError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=$1", values.Get("messageFromEmail")).Scan(
 		&tempSenderID, &tempSenderPassword, &tempSenderSalt, &tempSenderToken, &tempSenderAuthType,
 	)
 	switch {
@@ -48,7 +48,7 @@ func sendMessage(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	resultReceiverError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=?", values.Get("messageToEmail")).Scan(
+	resultReceiverError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=$1", values.Get("messageToEmail")).Scan(
 		&tempReceiverID, &tempReceiverPassword, &tempReceiverSalt, &tempReceiverToken, &tempReceiverAuthType,
 	)
 	switch {
@@ -82,7 +82,7 @@ func sendMessage(w http.ResponseWriter, r *http.Request) {
 
 		login := checkCredentials(values.Get("password"), tempSenderSalt.String, tempSenderPassword.String)
 		if login {
-			createMessageQuery, err := db.Query("INSERT INTO `message` (`id`, `message`, `sent_at`, `message_from_id`,`message_to_id`) VALUES (?, ?, ?, ?, ?)",
+			createMessageQuery, err := db.Query("INSERT INTO message (id, message, sent_at, message_from_id, message_to_id) VALUES ($1, $2, $3, $4, $5)",
 				tempMessageID, values.Get("message"), time.Now(), tempSenderID, tempReceiverID)
 			if err != nil {
 				panic(err.Error())
@@ -116,7 +116,7 @@ func sendMessage(w http.ResponseWriter, r *http.Request) {
 
 	} else if tempSenderAuthType.Int64 == 1 {
 		if values.Get("token") == tempSenderToken.String {
-			createMessageQuery, err := db.Query("INSERT INTO `message` (`id`, `message`, `sent_at`, `message_from_id`,`message_to_id`) VALUES (?, ?, ?, ?, ?)",
+			createMessageQuery, err := db.Query("INSERT INTO message (id, message, sent_at, message_from_id,message_to_id) VALUES ($1, $2, $3, $4, $5)",
 				tempMessageID, values.Get("message"), time.Now(), tempSenderID, tempReceiverID)
 			if err != nil {
 				panic(err.Error())
@@ -168,7 +168,7 @@ func messagesUserAndFriend(w http.ResponseWriter, r *http.Request) {
 	var tempSenderID, tempReceiverID, tempSenderAuthType, tempReceiverAuthType sql.NullInt64
 	resp := MessageResponse{}
 
-	resultSenderError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=?", values.Get("userEmail")).Scan(
+	resultSenderError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=$1", values.Get("userEmail")).Scan(
 		&tempSenderID, &tempSenderPassword, &tempSenderSalt, &tempSenderToken, &tempSenderAuthType,
 	)
 	switch {
@@ -188,7 +188,7 @@ func messagesUserAndFriend(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	resultReceiverError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=?", values.Get("friendEmail")).Scan(
+	resultReceiverError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=$1", values.Get("friendEmail")).Scan(
 		&tempReceiverID, &tempReceiverPassword, &tempReceiverSalt, &tempReceiverToken, &tempReceiverAuthType,
 	)
 	switch {
@@ -213,7 +213,7 @@ func messagesUserAndFriend(w http.ResponseWriter, r *http.Request) {
 		if login {
 
 			resultMessages, err := db.Query(
-				"SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = ? and m.message_to_id = ?) or (m.message_from_id = ? and m.message_to_id = ?) order by m.sent_at",
+				"SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = $1 and m.message_to_id = $2) or (m.message_from_id = $3 and m.message_to_id = $4) order by m.sent_at",
 				tempSenderID, tempReceiverID, tempReceiverID, tempSenderID)
 			if err != nil {
 				panic(err.Error())
@@ -272,7 +272,7 @@ func messagesUserAndFriend(w http.ResponseWriter, r *http.Request) {
 		if values.Get("token") == tempSenderToken.String {
 
 			resultMessages, err := db.Query(
-				"SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = ? and m.message_to_id = ?) or (m.message_from_id = ? and m.message_to_id = ?) order by m.sent_at",
+				"SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = $1 and m.message_to_id = $2) or (m.message_from_id = $3 and m.message_to_id = $4) order by m.sent_at",
 				tempSenderID, tempReceiverID, tempReceiverID, tempSenderID)
 			if err != nil {
 				panic(err.Error())

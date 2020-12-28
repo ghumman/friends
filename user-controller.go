@@ -83,7 +83,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 	} else { // The request is valid and required data is present
 
 		// Test if the user already exists
-		result, err := db.Query("SELECT password, salt, token FROM user where email=?", values.Get("email"))
+		result, err := db.Query("SELECT password, salt, token FROM users where email=$1", values.Get("email"))
 		if err != nil {
 			panic(err.Error())
 		}
@@ -106,7 +106,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 		} else { // create new user
 
 			// get last ID as unfortuntely Spring Boot didn't create table with id being auto_increment
-			lastIDQuery, err := db.Query("SELECT id FROM user ORDER BY id DESC LIMIT 1")
+			lastIDQuery, err := db.Query("SELECT id FROM users ORDER BY id DESC LIMIT 1")
 			if err != nil {
 				panic(err.Error())
 			}
@@ -130,7 +130,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 			if values.Get("authType") == "regular" {
 
 				// now we have newID, salt and hash, and we can creat new user
-				createUserQuery, err := db.Query("INSERT INTO `user` (`id`, `auth_type`, `created_at`, `email`,`first_name`, `last_name`, `password`, `salt`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+				createUserQuery, err := db.Query("INSERT INTO users (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
 					newID, 0, time.Now(), values.Get("email"), values.Get("firstName"), values.Get("lastName"), hash, salt)
 				if err != nil {
 					panic(err.Error())
@@ -147,11 +147,11 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				w.Write(js)
-				sendEmail(values.Get("email"), true, "")
+				// sendEmail(values.Get("email"), true, "")
 
 			} else { // else if creating account using OAuth
 				// now we have newID, salt and hash, and we can creat new user
-				createUserQuery, err := db.Query("INSERT INTO `user` (`id`, `auth_type`, `created_at`, `email`,`first_name`, `last_name`, `token`) VALUES (?, ?, ?, ?, ?, ?, ?)",
+				createUserQuery, err := db.Query("INSERT INTO `users` (`id`, `auth_type`, `created_at`, `email`,`first_name`, `last_name`, `token`) VALUES ($1, $2, $3, $4, $5, $6, $7)",
 					newID, 1, time.Now(), values.Get("email"), values.Get("firstName"), values.Get("lastName"), values.Get("token"))
 				if err != nil {
 					panic(err.Error())
@@ -168,7 +168,7 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				w.Write(js)
-				sendEmail(values.Get("email"), true, "")
+				// sendEmail(values.Get("email"), true, "")
 			} // else if creating account using OAuth ends
 		} // create new user ends
 	} // The request is valid and required data is present ends
@@ -188,8 +188,9 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := db.Query("SELECT password, salt, token FROM user where email=?", values.Get("email"))
+	result, err := db.Query("SELECT password, salt, token FROM users WHERE email = $1", values.Get("email"))
 	if err != nil {
+
 		panic(err.Error())
 	}
 
@@ -290,7 +291,7 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write(js)
 	} else if values.Get("authType") == "regular" {
-		result, err := db.Query("SELECT id, password, salt, token FROM user where email=?", values.Get("email"))
+		result, err := db.Query("SELECT id, password, salt, token FROM users where email=$1", values.Get("email"))
 		if err != nil {
 			panic(err.Error())
 		}
@@ -326,7 +327,7 @@ func changePassword(w http.ResponseWriter, r *http.Request) {
 			salt := createSalt()
 			hash := createHash(values.Get("newPassword"), salt)
 
-			updateUserQuery, err := db.Query("UPDATE `user` SET salt=?, password=? where id=?", salt, hash, tempID)
+			updateUserQuery, err := db.Query("UPDATE users SET salt=$1, password=$2 where id=$3", salt, hash, tempID)
 			if err != nil {
 				panic(err.Error())
 			}
@@ -395,7 +396,7 @@ func forgotPassword(w http.ResponseWriter, r *http.Request) {
 		w.Write(js)
 		return
 	} else {
-		result, err := db.Query("SELECT id, auth_type FROM user where email=?", values.Get("email"))
+		result, err := db.Query("SELECT id, auth_type FROM users where email=$1", values.Get("email"))
 		if err != nil {
 			panic(err.Error())
 		}
@@ -418,14 +419,14 @@ func forgotPassword(w http.ResponseWriter, r *http.Request) {
 
 			uuid := uuid.New()
 
-			updateUserQuery, err := db.Query("UPDATE `user` SET reset_token=? where id=?", uuid.String(), tempID)
+			updateUserQuery, err := db.Query("UPDATE users SET reset_token=$1 where id=$2", uuid.String(), tempID)
 			if err != nil {
 				panic(err.Error())
 			}
 			defer updateUserQuery.Close()
 
 			// send email
-			sendEmail(values.Get("email"), false, uuid.String())
+			// sendEmail(values.Get("email"), false, uuid.String())
 			resp.Message = "Reset password is sent"
 			resp.Err = false
 			resp.Status = 200
@@ -461,7 +462,7 @@ func resetPassword(w http.ResponseWriter, r *http.Request) {
 	var tempID sql.NullInt64
 
 	// Test if the user already exists
-	result, err := db.Query("SELECT id FROM user where reset_token=?", values.Get("token"))
+	result, err := db.Query("SELECT id FROM users where reset_token=$1", values.Get("token"))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -488,7 +489,7 @@ func resetPassword(w http.ResponseWriter, r *http.Request) {
 		salt := createSalt()
 		hash := createHash(values.Get("password"), salt)
 
-		updateUserQuery, err := db.Query("UPDATE `user` SET salt=?, password=?, reset_token=? where id=?", salt, hash, nil, tempID)
+		updateUserQuery, err := db.Query("UPDATE users SET salt=$1, password=$2, reset_token=$3 where id=$4", salt, hash, nil, tempID)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -532,7 +533,7 @@ func allFriends(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := db.Query("SELECT password, salt, token FROM user where email=?", values.Get("email"))
+	result, err := db.Query("SELECT password, salt, token FROM users where email=$1", values.Get("email"))
 	if err != nil {
 		panic(err.Error())
 	}
@@ -562,7 +563,7 @@ func allFriends(w http.ResponseWriter, r *http.Request) {
 				if login == false {
 					loginCredentialsFailed = true
 				} else {
-					resultFriends, err := db.Query("SELECT first_name, last_name, email FROM user where email!=?", values.Get("email"))
+					resultFriends, err := db.Query("SELECT first_name, last_name, email FROM users where email!=$1", values.Get("email"))
 					if err != nil {
 						panic(err.Error())
 					}
