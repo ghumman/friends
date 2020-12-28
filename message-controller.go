@@ -28,7 +28,7 @@ func sendMessage(w http.ResponseWriter, r *http.Request) {
 	var tempSenderID, tempReceiverID, tempSenderAuthType, tempReceiverAuthType sql.NullInt64
 	resp := MessageResponse{}
 
-	resultSenderError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=$1", values.Get("messageFromEmail")).Scan(
+	resultSenderError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM users where email=$1", values.Get("messageFromEmail")).Scan(
 		&tempSenderID, &tempSenderPassword, &tempSenderSalt, &tempSenderToken, &tempSenderAuthType,
 	)
 	switch {
@@ -48,7 +48,7 @@ func sendMessage(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	resultReceiverError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=$1", values.Get("messageToEmail")).Scan(
+	resultReceiverError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM users where email=$1", values.Get("messageToEmail")).Scan(
 		&tempReceiverID, &tempReceiverPassword, &tempReceiverSalt, &tempReceiverToken, &tempReceiverAuthType,
 	)
 	switch {
@@ -168,7 +168,7 @@ func messagesUserAndFriend(w http.ResponseWriter, r *http.Request) {
 	var tempSenderID, tempReceiverID, tempSenderAuthType, tempReceiverAuthType sql.NullInt64
 	resp := MessageResponse{}
 
-	resultSenderError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=$1", values.Get("userEmail")).Scan(
+	resultSenderError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM users where email=$1", values.Get("userEmail")).Scan(
 		&tempSenderID, &tempSenderPassword, &tempSenderSalt, &tempSenderToken, &tempSenderAuthType,
 	)
 	switch {
@@ -188,7 +188,7 @@ func messagesUserAndFriend(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	resultReceiverError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM user where email=$1", values.Get("friendEmail")).Scan(
+	resultReceiverError := db.QueryRow("SELECT id, password, salt, token, auth_type FROM users where email=$1", values.Get("friendEmail")).Scan(
 		&tempReceiverID, &tempReceiverPassword, &tempReceiverSalt, &tempReceiverToken, &tempReceiverAuthType,
 	)
 	switch {
