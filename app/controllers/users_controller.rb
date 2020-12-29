@@ -3,6 +3,7 @@ require 'openssl'
 require "base64"
 require 'securerandom'
 require 'net/smtp'
+require 'pg'
 
 class UsersController < ApplicationController
     skip_before_action :verify_authenticity_token
@@ -75,7 +76,7 @@ class UsersController < ApplicationController
             }
         end
         
-        stmt = "select password, salt from user where email=\"" + email + "\""
+        stmt = "select password, salt from users where email=\'" + email + "\'"
         result =  ActiveRecord::Base.connection.exec_query(stmt)
 
         if result.length() == 0 
