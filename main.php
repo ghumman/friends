@@ -17,7 +17,7 @@
                 $lastName = $_POST['lastName'];
         
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
+                    $stmt = $conn->prepare("SELECT password, salt FROM users WHERE email = :email");
                     $stmt->bindParam(':email', $email);
                     $stmt->execute();
 
@@ -32,7 +32,7 @@
                         $salt = generateSalt();
                         $dbPassword = base64_encode(generateKey($password, $salt));
 
-                        $stmt = $conn->prepare("select id from user order by id desc limit 1");
+                        $stmt = $conn->prepare("select id from users order by id desc limit 1");
                         $stmt->execute();
                         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -43,7 +43,7 @@
 
                         $currentTime = date("Y-m-d H:i:s");
 
-                        $stmt = $conn->prepare("insert into user (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (:userID, 0, :currentTime, :email, :firstName, :lastName, :dbPassword, :salt)");
+                        $stmt = $conn->prepare("insert into users (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (:userID, 0, :currentTime, :email, :firstName, :lastName, :dbPassword, :salt)");
                         $stmt->bindParam(':userID', $userID);
                         $stmt->bindParam(':currentTime', $currentTime);
                         $stmt->bindParam(':email', $email);
@@ -90,7 +90,7 @@
                 
         
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
+                    $stmt = $conn->prepare("SELECT password, salt FROM users WHERE email = :email");
                     $stmt->bindParam(':email', $email);
         
                     $stmt->execute();
@@ -144,7 +144,7 @@
                 $email = $_POST['email'];
 
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
+                    $stmt = $conn->prepare("SELECT password, salt FROM users WHERE email = :email");
                     $stmt->bindParam(':email', $email);
         
                     $stmt->execute();
@@ -159,7 +159,7 @@
                             $salt = generateSalt();
                             $dbPassword = base64_encode(generateKey($newPassword, $salt));
 
-                            $stmt = $conn->prepare("UPDATE user SET salt=:salt, password=:dbPassword where email=:email");
+                            $stmt = $conn->prepare("UPDATE users SET salt=:salt, password=:dbPassword where email=:email");
                             $stmt->bindParam(':email', $email);
                             $stmt->bindParam(':salt', $salt);
                             $stmt->bindParam(':dbPassword', $dbPassword);
@@ -203,7 +203,7 @@
     
                 try {
 
-                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
+                    $stmt = $conn->prepare("SELECT password, salt FROM users WHERE email = :email");
                     $stmt->bindParam(':email', $email);
         
                     $stmt->execute();
@@ -211,7 +211,7 @@
                     if ($stmt->rowCount() > 0) {
 
                         $token = uniqid();
-                        $stmt = $conn->prepare("UPDATE user SET reset_token=:token where email=:email");
+                        $stmt = $conn->prepare("UPDATE users SET reset_token=:token where email=:email");
                         $stmt->bindParam(':email', $email);
                         $stmt->bindParam(':token', $token);
             
@@ -255,7 +255,7 @@
 
                 try {
 
-                    $stmt = $conn->prepare("select id from user where reset_token=:token");
+                    $stmt = $conn->prepare("select id from users where reset_token=:token");
                     $stmt->bindParam(':token', $token);
 
                     $stmt->execute();
@@ -267,7 +267,7 @@
                         $salt = generateSalt();
                         $dbPassword = base64_encode(generateKey($password, $salt));
 
-                        $stmt = $conn->prepare("UPDATE user SET salt=:salt, password=:dbPassword, reset_token=NULL where id=:userID");
+                        $stmt = $conn->prepare("UPDATE users SET salt=:salt, password=:dbPassword, reset_token=NULL where id=:userID");
                         $stmt->bindParam(':salt', $salt);
                         $stmt->bindParam(':dbPassword', $dbPassword);
                         $stmt->bindParam(':userID', $userID);
@@ -309,7 +309,7 @@
                 
     
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt FROM user WHERE email = :email");
+                    $stmt = $conn->prepare("SELECT password, salt FROM users WHERE email = :email");
                     $stmt->bindParam(':email', $email);
     
                     $stmt->execute();
@@ -323,7 +323,7 @@
 
                             $users = array();
 
-                            $stmt = $conn->prepare("select first_name, last_name, email FROM user where email!=:email");
+                            $stmt = $conn->prepare("select first_name, last_name, email FROM users where email!=:email");
                             $stmt->bindParam(':email', $email);
             
                             $stmt->execute();
@@ -383,7 +383,7 @@
                 
     
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
+                    $stmt = $conn->prepare("SELECT password, salt, id FROM users WHERE email = :email");
                     $stmt->bindParam(':email', $messageFromEmail);
     
                     $stmt->execute();
@@ -394,7 +394,7 @@
                         $key = base64_encode(generateKey($password, $dataSender[0]['salt']));
 
                         if ($key == $dataSender[0]['password']) {
-                            $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
+                            $stmt = $conn->prepare("SELECT password, salt, id FROM users WHERE email = :email");
                             $stmt->bindParam(':email', $messageToEmail);
             
                             $stmt->execute();
@@ -472,7 +472,7 @@
                 
     
                 try {
-                    $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
+                    $stmt = $conn->prepare("SELECT password, salt, id FROM users WHERE email = :email");
                     $stmt->bindParam(':email', $userEmail);
     
                     $stmt->execute();
@@ -483,7 +483,7 @@
                         $key = base64_encode(generateKey($password, $dataSender[0]['salt']));
 
                         if ($key == $dataSender[0]['password']) {
-                            $stmt = $conn->prepare("SELECT password, salt, id FROM user WHERE email = :email");
+                            $stmt = $conn->prepare("SELECT password, salt, id FROM users WHERE email = :email");
                             $stmt->bindParam(':email', $friendEmail);
             
                             $stmt->execute();
