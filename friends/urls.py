@@ -9,6 +9,6 @@ urlpatterns = [
     path('forgot-password/', views.forgotPassword, name='forgotPassword'),
     path('reset-password/', views.resetPassword, name='resetPassword'),
     path('all-friends/', views.allFriends, name='allFriends'),
-    # path('send-message/', views.index, name='sendMessage'),
-    # path('messages-user-and-friend/', views.index, name='messagesUserAndFriend'),
+    path('send-message/', views.sendMessage, name='sendMessage'),
+    path('messages-user-and-friend/', views.messagesUserAndFriend, name='messagesUserAndFriend'),
 ]

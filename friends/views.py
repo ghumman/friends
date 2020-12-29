@@ -260,6 +260,148 @@ def allFriends(request):
                 resp = {'status': 400, 'error': True, 'message': 'Login Failed', 'time': datetime.datetime.now()} 
                 return JsonResponse(resp)
 
+
+def sendMessage(request):
+
+    if request.method == "POST":
+
+        try:
+            message = request.POST.get('message')
+            messageFromEmail = request.POST.get('messageFromEmail')
+            messageToEmail = request.POST.get('messageToEmail')
+            password = request.POST.get('password')
+        except: 
+            resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
+            return JsonResponse(resp)
+
+        if message is None or messageFromEmail is None or messageToEmail is None or password is None: 
+            resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
+            return JsonResponse(resp)
+        
+        with connection.cursor() as cursor:
+        
+            stmt = ("select password, salt, id from user where email=%s")
+            data = [messageFromEmail]
+            cursor.execute(stmt, data)
+            dataSender = cursor.fetchone()
+
+            if dataSender is None: 
+                resp = {'status': 400, 
+                'error': True, 
+                'message': 'Sender Does Not Exist', 
+                'time': datetime.datetime.now()} 
+                return JsonResponse(resp)
+            
+            key = generateKey(password, dataSender[1])
+            # check if new created hashed key equals to password saved in database
+            if base64.b64encode(key).decode("utf-8") == dataSender[0]:
+
+                # Check if receiver exists
+                stmt = ("select password, salt, id from user where email=%s")
+                data = [messageToEmail]
+                cursor.execute(stmt, data)
+                dataReceiver = cursor.fetchone()
+
+                if dataReceiver is None: 
+                    resp = {'status': 400, 
+                    'error': True, 
+                    'message': 'Receiver Does Not Exist', 
+                    'time': datetime.datetime.now()} 
+                    return JsonResponse(resp)
+
+                # Sender credentials are correct and both sender and receiver exists
+                saveMessage(message, dataSender[2], dataReceiver[2])
+
+                resp = {'status': 200, 'error': False, 'message': 'Message sent', 'time': datetime.datetime.now()} 
+                return JsonResponse(resp)
+            else :
+                resp = {'status': 400, 'error': True, 'message': 'Login Failed', 'time': datetime.datetime.now()} 
+                return JsonResponse(resp)
+
+def messagesUserAndFriend(request):
+
+    if request.method == "POST":
+
+        try:
+            userEmail = request.POST.get('userEmail')
+            friendEmail = request.POST.get('friendEmail')
+            password = request.POST.get('password')
+        except: 
+            resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
+            return JsonResponse(resp)
+
+        if userEmail is None or friendEmail is None or password is None:
+            resp = {'status': 400, 'error': True, 'message': 'Required data missing', 'time': datetime.datetime.now()} 
+            return JsonResponse(resp)
+
+        with connection.cursor() as cursor:
+
+            stmt = ("select password, salt, id from user where email=%s")
+            data = [userEmail]
+            cursor.execute(stmt, data)
+            dataSender = cursor.fetchone()
+
+            if dataSender is None: 
+                resp = {'status': 400, 
+                'error': True, 
+                'message': 'Sender Does Not Exist', 
+                'time': datetime.datetime.now()} 
+                return JsonResponse(resp)
+            
+            key = generateKey(password, dataSender[1])
+            # check if new created hashed key equals to password saved in database
+            if base64.b64encode(key).decode("utf-8") == dataSender[0]:
+
+                # Check if receiver exists
+                stmt = ("select password, salt, id from user where email=%s")
+                data = [friendEmail]
+                cursor.execute(stmt, data)
+                dataReceiver = cursor.fetchone()
+
+                if dataReceiver is None: 
+                    resp = {'status': 400, 
+                    'error': True, 
+                    'message': 'Receiver Does Not Exist', 
+                    'time': datetime.datetime.now()} 
+                    return JsonResponse(resp)
+                
+                stmt = ("SELECT message, message_from_id, message_to_id, sent_at  FROM message m WHERE (m.message_from_id = %s and m.message_to_id = %s) or (m.message_from_id = %s and m.message_to_id = %s) order by m.sent_at")
+                data = [dataSender[2], dataReceiver[2], dataReceiver[2], dataSender[2]]
+                cursor.execute(stmt, data)
+                rows = cursor.fetchall()
+                messages = []
+                for r in rows: 
+                    if r[1] == dataSender[2] and r[2] == dataReceiver[2]:
+                        messages.append({"message" : r[0], "messageFromEmail" : userEmail, "messageToEmail" : friendEmail, "sentAt": r[3]})
+                    else:
+                        messages.append({"message" : r[0], "messageFromEmail" : friendEmail, "messageToEmail" : userEmail, "sentAt": r[3]})
+
+
+                resp = {'status': 200, 'error': False, 'message': 'Messages attached', 'time': datetime.datetime.now(), 'msgs': messages} 
+                return JsonResponse(resp)
+            else :
+                resp = {'status': 400, 'error': True, 'message': 'Login Failed', 'time': datetime.datetime.now()} 
+                return JsonResponse(resp)
+
+
+def saveMessage(message, senderID, receiverID):
+    with connection.cursor() as cursor:
+        stmt = ("SELECT id FROM message ORDER BY id DESC LIMIT 1")
+        cursor.execute(stmt)
+        data = cursor.fetchone()
+        messageID = 0
+        if data is None: 
+            messageID = 1
+        else: 
+            messageID = data[0] + 1
+            
+        stmt = ("insert into message (id, message, sent_at, message_from_id, message_to_id) VALUES (%s, %s, %s, %s, %s)")
+        data = [messageID, message, datetime.datetime.now() , senderID, receiverID]
+        cursor.execute(stmt, data)
+    
+
+
+
 def sendNewUserEmail(email, accountCreated, token):
 
     port = 465  # For SSL
