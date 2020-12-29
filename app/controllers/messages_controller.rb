@@ -16,7 +16,7 @@ class MessagesController < ApplicationController
             }
         end
 
-        stmt = "select password, salt, id from user where email=\"" + messageFromEmail + "\""
+        stmt = "select password, salt, id from users where email=\'" + messageFromEmail + "\'"
         dataSender =  ActiveRecord::Base.connection.exec_query(stmt)
 
         if dataSender.length() == 0 
@@ -32,7 +32,7 @@ class MessagesController < ApplicationController
 
         if dataSender.entries[0].fetch("password") == Base64.encode64(key).gsub("\n",'')
             
-            stmt = "select password, salt, id from user where email=\"" + messageToEmail + "\""
+            stmt = "select password, salt, id from users where email=\'" + messageToEmail + "\'"
             dataReceiver =  ActiveRecord::Base.connection.exec_query(stmt)
 
             if dataReceiver.length() == 0 
@@ -77,7 +77,7 @@ class MessagesController < ApplicationController
                 time: DateTime.now() 
             }
         end
-        stmt = "select password, salt, id from user where email=\"" + userEmail + "\""
+        stmt = "select password, salt, id from users where email=\'" + userEmail + "\'"
         dataSender =  ActiveRecord::Base.connection.exec_query(stmt)
 
         if dataSender.length() == 0 
@@ -93,7 +93,7 @@ class MessagesController < ApplicationController
 
         if dataSender.entries[0].fetch("password") == Base64.encode64(key).gsub("\n",'')
             
-            stmt = "select password, salt, id from user where email=\"" + friendEmail + "\""
+            stmt = "select password, salt, id from users where email=\'" + friendEmail + "\'"
             dataReceiver =  ActiveRecord::Base.connection.exec_query(stmt)
 
             if dataReceiver.length() == 0 
@@ -149,7 +149,7 @@ class MessagesController < ApplicationController
         end
 
         #Create new message
-        stmt = "insert into message (id, message, sent_at, message_from_id, message_to_id) VALUES (" + messageID.to_s + ", \"" + message + "\", \"" + DateTime.now().to_s + "\", " + senderID.to_s + ", " + receiverID.to_s + ")"
+        stmt = "insert into message (id, message, sent_at, message_from_id, message_to_id) VALUES (" + messageID.to_s + ", \'" + message + "\', \'" + DateTime.now().to_s + "\', " + senderID.to_s + ", " + receiverID.to_s + ")"
         data =  ActiveRecord::Base.connection.exec_query(stmt)
 
     end

@@ -3,7 +3,6 @@ require 'openssl'
 require "base64"
 require 'securerandom'
 require 'net/smtp'
-require 'pg'
 
 class UsersController < ApplicationController
     skip_before_action :verify_authenticity_token
@@ -24,7 +23,7 @@ class UsersController < ApplicationController
             }
         end
 
-        stmt = "select password, salt from user where email=\"" + email + "\""
+        stmt = "select password, salt from users where email=\'" + email + "\'"
         data =  ActiveRecord::Base.connection.exec_query(stmt)
 
         if data.length() != 0 
@@ -40,7 +39,7 @@ class UsersController < ApplicationController
         dbPassword = Base64.encode64(generateKey(password, salt)).gsub("\n",'')
 
         # Get the last id to create id for user as our table is not auto increment on id column
-        stmt = ("select id from user order by id desc limit 1")
+        stmt = ("select id from users order by id desc limit 1")
         data =  ActiveRecord::Base.connection.exec_query(stmt)
         
         userID = 0
@@ -51,7 +50,7 @@ class UsersController < ApplicationController
         end
 
         #Create new user
-        stmt = "insert into user (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (" + userID.to_s + ", 0, \"" + DateTime.now().to_s + "\", \"" + email + "\", \"" + firstName + "\", \"" + lastName + "\", \"" + dbPassword + "\", \"" + salt + "\")"
+        stmt = "insert into users (id, auth_type, created_at, email, first_name, last_name, password, salt) VALUES (" + userID.to_s + ", 0, \'" + DateTime.now().to_s + "\', \'" + email + "\', \'" + firstName + "\', \'" + lastName + "\', \'" + dbPassword + "\', \'" + salt + "\')"
         data =  ActiveRecord::Base.connection.exec_query(stmt)
 
         UserMailer.with(email: email, accountCreated: true, token: "").welcome_email.deliver_now
@@ -121,7 +120,7 @@ class UsersController < ApplicationController
             }
         end
 
-        stmt = "select password, salt from user where email=\"" + email + "\""
+        stmt = "select password, salt from users where email=\'" + email + "\'"
         data =  ActiveRecord::Base.connection.exec_query(stmt)
 
         if data.length() == 0 
@@ -138,7 +137,7 @@ class UsersController < ApplicationController
         if data.entries[0].fetch("password") == Base64.encode64(key).gsub("\n",'')
             salt = generateSalt()
             dbPassword = Base64.encode64(generateKey(newPassword, salt)).gsub("\n",'')
-            stmt = "UPDATE user SET salt=\"" + salt + "\", password=\"" + dbPassword + "\"  where email=\"" + email + "\""
+            stmt = "UPDATE users SET salt=\'" + salt + "\', password=\'" + dbPassword + "\'  where email=\'" + email + "\'"
             data =  ActiveRecord::Base.connection.exec_query(stmt)
             return render json: {
                 status: 200,
@@ -168,7 +167,7 @@ class UsersController < ApplicationController
             }
         end
 
-        stmt = "select password, salt from user where email=\"" + email + "\""
+        stmt = "select password, salt from users where email=\'" + email + "\'"
         result =  ActiveRecord::Base.connection.exec_query(stmt)
 
         if result.length() == 0 
@@ -181,7 +180,7 @@ class UsersController < ApplicationController
         end
 
         uuidNumber = SecureRandom.uuid 
-        stmt = "UPDATE user SET reset_token=\"" + uuidNumber.to_s + "\" where email=\"" + email + "\""
+        stmt = "UPDATE users SET reset_token=\'" + uuidNumber.to_s + "\' where email=\'" + email + "\'"
         data =  ActiveRecord::Base.connection.exec_query(stmt)
         
         UserMailer.with(email: email, accountCreated: false, token: uuidNumber.to_s).welcome_email.deliver_now
@@ -189,7 +188,7 @@ class UsersController < ApplicationController
         return render json: {
             status: 200,
             error: false,
-            message: "Password changed",
+            message: "Reset password is sent@",
             time: DateTime.now() 
         }  
 
@@ -208,7 +207,7 @@ class UsersController < ApplicationController
             }
         end
 
-        stmt = "select id from user where reset_token=\"" + token + "\""
+        stmt = "select id from users where reset_token=\'" + token + "\'"
         data =  ActiveRecord::Base.connection.exec_query(stmt)
 
         if data.length() == 0 
@@ -222,7 +221,7 @@ class UsersController < ApplicationController
 
         salt = generateSalt()
         dbPassword = Base64.encode64(generateKey(password, salt)).gsub("\n",'')
-        stmt = "UPDATE user SET salt=\"" + salt + "\", password=\"" + dbPassword + "\", reset_token=null where id=" + data.entries[0].fetch("id").to_s
+        stmt = "UPDATE users SET salt=\'" + salt + "\', password=\'" + dbPassword + "\', reset_token=null where id=" + data.entries[0].fetch("id").to_s
         data =  ActiveRecord::Base.connection.exec_query(stmt)
         return render json: {
             status: 200,
@@ -246,7 +245,7 @@ class UsersController < ApplicationController
             }
         end
 
-        stmt = "select password, salt from user where email=\"" + email + "\""
+        stmt = "select password, salt from users where email=\'" + email + "\'"
         result =  ActiveRecord::Base.connection.exec_query(stmt)
 
         if result.length() == 0 
@@ -261,7 +260,7 @@ class UsersController < ApplicationController
 
         if result.entries[0].fetch("password") == Base64.encode64(key).gsub("\n",'')
 
-            stmt = "select first_name, last_name, email FROM user where email!=\"" + email + "\""
+            stmt = "select first_name, last_name, email FROM users where email!=\'" + email + "\'"
             result =  ActiveRecord::Base.connection.exec_query(stmt)
 
             users = []
