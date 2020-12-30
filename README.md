@@ -1,3 +1,29 @@
+```
+git init
+git remote add python-django git@github.com:ghumman/friends.git
+git add .
+git commit -m "Initial commit"
+git push python-django master:python-django
+```
+
+## Starting the server
+```
+php artisan serve
+```
+
+## Brining application down and up for maintainence
+```
+php artisan down
+php artisan serve
+
+or 
+
+php artisan up
+php artisan serve
+```
+
+# Automatically generated README
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
 
 <p align="center">
