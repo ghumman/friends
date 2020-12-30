@@ -1,9 +1,9 @@
 ```
 git init
-git remote add python-django git@github.com:ghumman/friends.git
+git remote add php-laravel git@github.com:ghumman/friends.git
 git add .
 git commit -m "Initial commit"
-git push python-django master:python-django
+git push php-laravel master:php-laravel
 ```
 
 ## Starting the server
