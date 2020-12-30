@@ -99,6 +99,10 @@ Messages:
 			
 ```
 
+## Github Project
+Project timeline and tickets' statuses can be found here. 
+[Github Project](https://github.com/users/ghumman/projects/1).
+
 ## Request -> Body -> Variables
 ### add-user (addUser)
 ```
