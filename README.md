@@ -1,5 +1,5 @@
 ## About Friends
-Friends is a combination of fullstack projects created in different programming languages which includes backend applications, frontend applications, different databases and framesworks. Currently it has following projects. 
+Friends is a collection of fullstack projects created in different programming languages which includes backend applications, frontend applications, different databases and frameworks. Currently it has following projects. 
 
 ### Backend Applications
 - [Java Spring Boot with MySQL, Hibernate, JPA, Swagger](https://github.com/ghumman/friends/tree/java-spring-boot).
