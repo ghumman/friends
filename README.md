@@ -1,9 +1,102 @@
-This branch includes project documentation.
-### Push code using following command
+## About Friends
+Friends is a combination of fullstack projects created in different programming languages which includes backend applications, frontend applications, different databases and framesworks. Currently it has following projects. 
+
+### Backend Applications
+- [Java Spring Boot with MySQL, Hibernate, JPA, Swagger](https://github.com/ghumman/friends/tree/java-spring-boot).
+- [Java Spring Boot with MongoDB, JPA, Swagger](https://github.com/ghumman/friends/tree/java-spring-boot-mongo).
+- [Java Spring Boot with PostgreSQL, JPA, Swagger](https://github.com/ghumman/friends/tree/java-spring-boot-psql).
+- [Golang with MySQL](https://github.com/ghumman/friends/tree/go).
+- [Golang with MongoDB](https://github.com/ghumman/friends/tree/go-mongo).
+- [Golang with PostgreSQL](https://github.com/ghumman/friends/tree/go-psql).
+- [Python Flask with MySQL](https://github.com/ghumman/friends/tree/python).
+- [Python Flask with MongoDB](https://github.com/ghumman/friends/tree/python-mongo).
+- [Python Flask with PostgreSQL](https://github.com/ghumman/friends/tree/python-psql).
+- [Python Django with MySQL](https://github.com/ghumman/friends/tree/python-django).
+- [Node.js with MySQL](https://github.com/ghumman/friends/tree/node-js).
+- [Node.js with MongoDB](https://github.com/ghumman/friends/tree/node-js-mongo).
+- [Node.js with PostgreSQL](https://github.com/ghumman/friends/tree/node-js-psql).
+- [Ruby with MySQL](https://github.com/ghumman/friends/tree/ruby).
+- [Ruby with MongoDB](https://github.com/ghumman/friends/tree/ruby-mongo).
+- [Ruby with PostgreSQL](https://github.com/ghumman/friends/tree/ruby-psql).
+- [PHP with MySQL](https://github.com/ghumman/friends/tree/php).
+- [PHP with MongoDB](https://github.com/ghumman/friends/tree/php-mongo).
+- [PHP with PostgreSQL](https://github.com/ghumman/friends/tree/php-psql).
+- [PHP Laravel with MySQL](https://github.com/ghumman/friends/tree/php-laravel).
+
+### Frontend Applications
+- [React.js with Functional Components, Redux](https://github.com/ghumman/friends/tree/php-mongo).
+- [Angular.js 11](https://github.com/ghumman/friends/tree/php-psql).
+- [Vue.js with Vite](https://github.com/ghumman/friends/tree/php-laravel).
+
+## Features
+Following are the main features which are provided in every project and can also be found here [FEATURES](https://github.com/ghumman/friends/blob/project-documentation/features.txt).
+
 ```
-git push friends project-documentation
-or 
-git push friends master:project-documentation
+Authentication: 
+
+	Create User and Sending Email
+		add-user: 
+			authType
+			firstName
+			lastName
+			password
+			email
+			token
+
+	Login
+		login	
+			authType
+			email
+			password
+			token
+
+	Change Password
+		change-password
+			authType
+			email
+			password
+			newPassword
+			token
+			
+	Forgot Password and Sending Email
+		forgot-password
+			authType
+			email
+
+	Reset Password using Reset Email Link
+		reset-password
+			authType
+			token
+			password
+
+	Show All Friends
+		all-friends
+			authType
+			email
+			password
+			token
+			
+
+
+Messages: 
+
+	Send Message
+		send-message
+			authType
+			message	
+			password
+			messageFromEmail
+			messageToEmail
+			token
+
+	Show Conversation Between User and Friend
+		messages-user-and-friend
+			authType
+			password
+			userEmail
+			friendEmail
+			token
+			
 ```
 
 ## Request -> Body -> Variables
@@ -104,3 +197,5 @@ curl --header "Content-Type: application/json" \
   http://localhost:8080/messages-user-and-friend
 ```
 
+## Contribution
+PRs are welcomed to customize and refactor current code or adding new language/frameworks. 

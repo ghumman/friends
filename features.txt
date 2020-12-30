@@ -1,41 +1,66 @@
 Authentication: 
 
-	Create User
-		create-user: 
+	Create User and Sending Email
+		add-user: 
+			authType
 			firstName
 			lastName
 			password
 			email
+			token
+
+	Login
+		login	
 			authType
-
-	Modify User
-		change-password
-			email
-	
-	Forgot Password
-		forgot-password
-			email
-
-	Authenticate Email
-		email-auth
-			link
-			
-	Delete User
-		delete-user
 			email
 			password
+			token
 
-Message: 
+	Change Password
+		change-password
+			authType
+			email
+			password
+			newPassword
+			token
+			
+	Forgot Password and Sending Email
+		forgot-password
+			authType
+			email
+
+	Reset Password using Reset Email Link
+		reset-password
+			authType
+			token
+			password
+
+	Show All Friends
+		all-friends
+			authType
+			email
+			password
+			token
+			
+
+
+Messages: 
 
 	Send Message
 		send-message
-			from
-			to
-			messageText
+			authType
+			message	
+			password
+			messageFromEmail
+			messageToEmail
+			token
 
-	Receive Message
-		receive-message
-			from
-			to
-			messageText
+	Show Conversation Between User and Friend
+		messages-user-and-friend
+			authType
+			password
+			userEmail
+			friendEmail
+			token
+			
 
