@@ -201,5 +201,5 @@ curl --header "Content-Type: application/json" \
   http://localhost:8080/messages-user-and-friend
 ```
 
-## Contribution
-PRs are welcomed to customize and refactor current code or adding new language/frameworks. 
+## Contribution - PRs welcome
+Feel free to customize and refactor current code or add new languages/frameworks. 
