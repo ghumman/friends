@@ -24,9 +24,9 @@ Friends is a collection of fullstack projects created in different programming l
 - [PHP Laravel with MySQL](https://github.com/ghumman/friends/tree/php-laravel).
 
 ### Frontend Applications
-- [React.js with Functional Components, Redux](https://github.com/ghumman/friends/tree/php-mongo).
-- [Angular.js 11](https://github.com/ghumman/friends/tree/php-psql).
-- [Vue.js with Vite](https://github.com/ghumman/friends/tree/php-laravel).
+- [React.js with Functional Components, Redux](https://github.com/ghumman/friends/tree/react-js).
+- [Angular.js 11](https://github.com/ghumman/friends/tree/angular).
+- [Vue.js with Vite](https://github.com/ghumman/friends/tree/vue-js).
 
 ## Features
 Following are the main features which are provided in every project and can also be found here [FEATURES](https://github.com/ghumman/friends/blob/project-documentation/features.txt).
