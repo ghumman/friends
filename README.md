@@ -12,8 +12,17 @@ git push node-js-psql master:node-js-psql
 node server.js
 ```
 
-## Error when connecting to local mysql instant
+## Setting up psql on ubuntu
 ```
-Followed this link to fix this error
-https://stackoverflow.com/questions/50093144/mysql-8-0-client-does-not-support-authentication-protocol-requested-by-server
+Make sure you have psql installed on ubuntu, you can make sure by typing
+psql --version
+Basic commands: 
+sudo -i -u postgres
+psql
+To list database
+\l
+To connect to a database
+\c friends_psql
+To list all tables
+\d
 ```
