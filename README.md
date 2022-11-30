@@ -35,12 +35,17 @@ http://localhost:8080/v2/api-docs
 ```
 http://localhost:8080/swagger-ui/
 ```
-### Note
-In order to run the application using command line. 
+
+- In order to run the application using command line. 
 ```
 cd friends/message
 ./mvnw spring-boot:run
 ```
-In order to run it on VS Code, which is ready and have the prerequisites, just go to Run and Debug and run the 
+- In order to run it on VS Code, which is ready and have the prerequisites, just go to Run and Debug and run the 
 Start Debugger.<br/>
 
+- In order to create jar file/files.
+```
+cd message
+./mvnw package
+```
