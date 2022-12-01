@@ -5,20 +5,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 
 @RestController
@@ -31,9 +25,6 @@ public class UserController {
 
     @Autowired 
     private UserRepository userRepository;
-
-    @Autowired
-    private JavaMailSender emailSender;
 
     @PostMapping("/add-user")
     public ResponseEntity<UserResponse> addUser(
@@ -97,14 +88,6 @@ public class UserController {
 
             User newUser = new User(firstName, lastName, email, password, authType, token); 
             userRepository.save(newUser); 
-
-            // send confirmation email
-            SimpleMailMessage message = new SimpleMailMessage(); 
-            message.setFrom("server-email@gmail.com");
-            message.setTo(email); 
-            message.setSubject("Welcome to Friends"); 
-            message.setText("New Account Created");
-            emailSender.send(message);
 
             userResponse.setMessage("User Created");
             userResponse.setStatus(200);
@@ -305,23 +288,8 @@ public class UserController {
             userResponse.setTime(new Timestamp(System.currentTimeMillis()));
             return ResponseEntity.ok(userResponse);
         } else {
-
-            currentUser.setResetToken(UUID.randomUUID().toString());
-            userRepository.save(currentUser); 
-
-			String appUrl = request.getScheme() + "://" + request.getServerName();
-			
-			// Email message
-			SimpleMailMessage passwordResetEmail = new SimpleMailMessage();
-			passwordResetEmail.setFrom("support@demo.com");
-			passwordResetEmail.setTo(currentUser.getEmail());
-			passwordResetEmail.setSubject("Password Reset Request");
-			passwordResetEmail.setText("To reset your password, click the link below:\n" + appUrl
-					+ ":3000/#/reset-password?token=" + currentUser.getResetToken());
-			
-            emailSender.send(passwordResetEmail);
             
-            userResponse.setMessage("Reset password is sent");
+            userResponse.setMessage("This feature has been disabled. Just reset your password");
             userResponse.setStatus(200);
             userResponse.setError(false);
             userResponse.setTime(new Timestamp(System.currentTimeMillis()));
@@ -333,33 +301,23 @@ public class UserController {
 
     @PostMapping(path="/reset-password")
     public ResponseEntity<UserResponse> resetPassword(
-        @RequestParam String token,
+        @RequestParam String email,
         @RequestParam String password
     ) {
-        Optional<User> currentUserOpt = userRepository.findByResetToken(token);
-        User currentUser = currentUserOpt.get(); 
+        User currentUser = userRepository.findByEmail(email);
+        String salt = PasswordUtils.getSalt(30);
+        String newPassword = PasswordUtils.generateSecurePassword(password, salt);
 
-		if (currentUser == null) {
-            userResponse.setMessage("Token is not valid");
-            userResponse.setStatus(400);
-            userResponse.setError(true);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
-            return ResponseEntity.ok(userResponse);
-        } else {
-            String salt = PasswordUtils.getSalt(30);
-            String newPassword = PasswordUtils.generateSecurePassword(password, salt);
+        currentUser.setSalt(salt);
+        currentUser.setPassword(newPassword);
 
-            currentUser.setSalt(salt);
-            currentUser.setPassword(newPassword);
+        userRepository.save(currentUser); 
 
-            userRepository.save(currentUser); 
-
-            userResponse.setMessage("Password successfully reset");
-            userResponse.setStatus(200);
-            userResponse.setError(false);
-            userResponse.setTime(new Timestamp(System.currentTimeMillis()));
-            return ResponseEntity.ok(userResponse);
-        }
+        userResponse.setMessage("Password successfully reset");
+        userResponse.setStatus(200);
+        userResponse.setError(false);
+        userResponse.setTime(new Timestamp(System.currentTimeMillis()));
+        return ResponseEntity.ok(userResponse);
     }
 
     @PostMapping(path="/all-friends")
