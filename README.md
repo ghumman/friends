@@ -7,13 +7,12 @@ There are some feature changes in this repo compared to other java projects with
 - You can just change the password when using reset-password without sending `token`. Just need to send email and password.
 
 # Following documentation is from project java spring boot branch
+
 This branch contains java spring boot back end application
 ### Push code using following command
 git push origin java-spring-boot
 ### In order to allow less secure apps to send emails using gmail use following link
 https://myaccount.google.com/lesssecureapps
-
-
 
 ### Starting on a new Computer
 1. Make sure your VS Code has following extentions
