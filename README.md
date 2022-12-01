@@ -6,8 +6,6 @@ There are some feature changes in this repo compared to other java projects with
 - Sending email is removed when using feature: forgot-password.
 - You can just change the password when using reset-password without sending `token`. Just need to send email and password.
 
-
-
 # Following documentation is from project java spring boot branch
 This branch contains java spring boot back end application
 ### Push code using following command
