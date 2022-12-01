@@ -1,0 +1,314 @@
+{
+	"info": {
+		"_postman_id": "956b0603-5da5-4753-a02d-0f1c1297a3af",
+		"name": "Friends",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Add User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/add-user?firstName&lastName&email&password&authType&token",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"add-user"
+							],
+							"query": [
+								{
+									"key": "firstName",
+									"value": null
+								},
+								{
+									"key": "lastName",
+									"value": null
+								},
+								{
+									"key": "email",
+									"value": null
+								},
+								{
+									"key": "password",
+									"value": null
+								},
+								{
+									"key": "authType",
+									"value": null
+								},
+								{
+									"key": "token",
+									"value": null
+								}
+							]
+						},
+						"description": "Creates a new user"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/login?email&password&authType&token",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"login"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": null
+								},
+								{
+									"key": "password",
+									"value": null
+								},
+								{
+									"key": "authType",
+									"value": null
+								},
+								{
+									"key": "token",
+									"value": null
+								}
+							]
+						},
+						"description": "Creates a new user"
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/change-password?email=&password=&newPassword=&authType=",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"change-password"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": ""
+								},
+								{
+									"key": "password",
+									"value": ""
+								},
+								{
+									"key": "newPassword",
+									"value": ""
+								},
+								{
+									"key": "authType",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/forgot-password?email=",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"forgot-password"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/reset-password?token=&password=&email",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"reset-password"
+							],
+							"query": [
+								{
+									"key": "token",
+									"value": ""
+								},
+								{
+									"key": "password",
+									"value": ""
+								},
+								{
+									"key": "email",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Message",
+			"item": [
+				{
+					"name": "All Friends",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/all-friends?email=&password=&authType=&token",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"all-friends"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": ""
+								},
+								{
+									"key": "password",
+									"value": ""
+								},
+								{
+									"key": "authType",
+									"value": ""
+								},
+								{
+									"key": "token",
+									"value": null
+								}
+							]
+						},
+						"description": "Creates a new user"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Message",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/send-message?message=&messageFromEmail=&messageToEmail=&authType=&password=&token",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"send-message"
+							],
+							"query": [
+								{
+									"key": "message",
+									"value": ""
+								},
+								{
+									"key": "messageFromEmail",
+									"value": ""
+								},
+								{
+									"key": "messageToEmail",
+									"value": ""
+								},
+								{
+									"key": "authType",
+									"value": ""
+								},
+								{
+									"key": "password",
+									"value": ""
+								},
+								{
+									"key": "token",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Messages Between User and User's Friend",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/messages-user-and-friend?userEmail&friendEmail&authType&password&token",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"messages-user-and-friend"
+							],
+							"query": [
+								{
+									"key": "userEmail",
+									"value": null
+								},
+								{
+									"key": "friendEmail",
+									"value": null
+								},
+								{
+									"key": "authType",
+									"value": null
+								},
+								{
+									"key": "password",
+									"value": null
+								},
+								{
+									"key": "token",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
