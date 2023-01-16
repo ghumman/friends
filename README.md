@@ -5,6 +5,7 @@ Friends is a collection of fullstack projects created in different programming l
 - [Java Spring Boot with MySQL, Hibernate, JPA, Swagger](https://github.com/ghumman/friends/tree/java-spring-boot).
 - [Java Spring Boot with MongoDB, JPA, Swagger](https://github.com/ghumman/friends/tree/java-spring-boot-mongo).
 - [Java Spring Boot with PostgreSQL, JPA, Swagger](https://github.com/ghumman/friends/tree/java-spring-boot-psql).
+- [Docker Java(Spring Boot, SQL Lite) + React](https://github.com/ghumman/friends/tree/java-react-sqllite-docker-compose).
 - [Golang with MySQL](https://github.com/ghumman/friends/tree/go).
 - [Golang with MongoDB](https://github.com/ghumman/friends/tree/go-mongo).
 - [Golang with PostgreSQL](https://github.com/ghumman/friends/tree/go-psql).
