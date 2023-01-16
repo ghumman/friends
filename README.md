@@ -6,6 +6,37 @@ There are some feature changes in this repo compared to other java projects with
 - Sending email is removed when using feature: forgot-password.
 - You can just change the password when using reset-password without sending `token`. Just need to send email and password.
 
+## If you want to run Java application only
+Run following
+```
+cd backend
+./mvnw spring-boot:run
+```
+Use Postman to test the application which is running on `localhost:8080`. 
+
+## If you want to run React application only
+Run following
+```
+cd frontend-react
+# If no node_modules presend
+yarn install
+yarn start
+```
+
+## Running this compose project
+In order to run the compose project, run following command.
+``` 
+docker compose up -d 
+``` 
+`-d` is to run everything in background<br/> 
+ 
+In order to destroy everything, use following command.<br/> 
+``` 
+docker compose down 
+``` 
+If you want to remove the volumes, you will need to add the --volumes flag<br/> 
+
+
 # Following documentation is from project java spring boot branch
 
 This branch contains java spring boot back end application
