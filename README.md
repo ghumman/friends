@@ -97,6 +97,46 @@ After all this ESLint plugin installed in VSCode start throwing errors. So I uni
 ## ESLinting rules
 Copied eslinting rules from another project to .eslintrc.js which fixed all props validation errors. The same file is used by both command line `yarn run eslint .` and vscode eslint plugin.
 
+## Deploying React App to Github Pages
+This app is hosted on github pages and can be accessed at `https://ghumman.github.io/friends/`. Used following two links to figure out how to deploy on github pages. 
+```
+https://github.com/gitname/react-gh-pages
+https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages
+```
+Here's summary.
+ 
+There are 2 main steps.
+
+- Step 1 : Coding
+
+Install npm package. 
+```
+npm install gh-pages --save-dev
+```
+In `package.json` after version added following line. 
+```
+"homepage": "https://ghumman.github.io/friends",
+``` 
+And before line `start: react-scripts start`, add following lines
+```
+"predeploy": "npm run build",
+"deploy": "gh-pages -d build",
+``` 
+Then run following command.
+```
+npm run deploy
+``` 
+Acccording to the web link provided above, this will run predeploy and deploy commands, create a new branch gh-pages in your repository and push your build directory to this newly created `gh-pages` branch. If you already have that branch it will update it. You will have a new commit with default message `Updates`. If you want to have a different message use `npm run deploy -- -m "Deploy React app to GitHub Pages"`.
+
+Note: When I ran it, it did not work and it was complaining about url not set. I had to run following command to fix it. This is the case when you have ssh communication set up. 
+```
+git remote set-url origin git@github.com:ghumman/friends.git
+```
+
+- Step 2: Github Settings
+
+Go to your github repo settings and then to `Pages`. Select `Source` as `Deploy from a branch`, `Branch` as `gh-pages`, `Folder` as `/root`. Then save it. You can check the deployment status inside `Actions`.
+
 ---------------------------------------------------------------------------------
 Automatically Generated Documentation
 ---------------------------------------------------------------------------------
