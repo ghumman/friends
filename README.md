@@ -14,6 +14,20 @@ git push angular master:angular
 ng generate component Login
 ```
 
+## Deploying This App On Github Pages
+Although this application is part of friends but it is deployed on repo `https://github.com/ghumman/friends-angular-ui`. This is because only one github pages application can be lauched from one repository. React application is deployed from `https://github.com/ghumman/friends` and Vue application is deployed from `https://github.com/ghumman/friends-vue-js`. For general github web application deployed, do checkout React branch for more documentation. Following are the steps I did to deploy an angualar application to github pages. 
+
+Run following
+```
+git remote add origin git@github.com:ghumman/friends-angular-ui.git
+ng add angular-cli-ghpages
+ng deploy --base-href=/friends-angular-ui/
+``` 
+
+Somehow when you deploy, it knows that this should take remote address `origin` and push it to branch `gh-pages` inside `origin` repo.
+
+Now this repo has two remote addresses. `origin` which points to `friends-angular-ui` and `angular` which points to `friends` repo. Just make sure before pushing where exactly you're pushing things. 
+
 //////////////////////////////////////////////////
 //  Auto Generated
 //////////////////////////////////////////////////
