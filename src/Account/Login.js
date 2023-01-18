@@ -8,13 +8,17 @@ import Form from "react-bootstrap/Form";
 
 import { Link } from "react-router-dom";
 
+import { backendAddress } from "./../config/default-variables.js"
+
 const USERNAME = "username";
 const PASSWORD = "password";
+const BACKURL = "backurl";
 
 function Login(props) {
   const [errorServerMessage, setErrorServerMessage] = useState("");
   const [formUsername, setFormUsername] = useState("");
   const [formPassword, setFormPassword] = useState(""); 
+  const [currentBackendAddress, setCurrentBackendAddress] = useState(backendAddress)
 
   const handleChangeUsername = (event) => {
     // this.setState({ formUsername: event.target.value });
@@ -26,6 +30,12 @@ function Login(props) {
     setFormPassword(event.target.value); 
   }
 
+  const changeBackendUrl = (event) => {
+      setCurrentBackendAddress(event.target.value.trim()); 
+      localStorage.setItem(BACKURL, event.target.value.trim());
+
+  }
+
   const handleSubmit = (event) => {
     event.preventDefault();
     var username = formUsername;
@@ -33,7 +43,7 @@ function Login(props) {
 
 
     fetch(
-      "http://localhost:8080/login",
+      currentBackendAddress + '/login',
       {
         method: "POST",
         headers: {
@@ -52,6 +62,7 @@ function Login(props) {
 
           localStorage.setItem(USERNAME, username.trim());
           localStorage.setItem(PASSWORD, password.trim());
+
 
           props.history.push({
             pathname: "/Profile"
@@ -111,6 +122,17 @@ function Login(props) {
     <div className="App">
       <header className="App-header">
         <p>Friends</p>
+	 Current Backend Address: {currentBackendAddress}
+        <Form>
+          <Form.Group controlId="loginFormUsername">
+            <Form.Label>New Backend Address</Form.Label>
+            <Form.Control
+              value={currentBackendAddress}
+              placeholder="New Backend Address "
+              onChange={changeBackendUrl}
+            />
+          </Form.Group>
+        </Form>
         <p
           style={{
             borderStyle: "solid",

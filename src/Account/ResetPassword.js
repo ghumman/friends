@@ -5,13 +5,20 @@ import Button from "react-bootstrap/Button";
 
 import Form from "react-bootstrap/Form";
 
+import { backendAddress } from "./../config/default-variables.js"
+
 function ResetPassword(props) {
 
   const [errorServerMessage, setErrorServerMessage] = useState(""); 
+  const [formEmail, setFormEmail] = useState(""); 
   const [formPassword, setFormPassword] = useState(""); 
   const [formPassword2, setFormPassword2] = useState(""); 
   const [token, setToken] = useState(""); 
+  const [currentBackendAddress, setCurrentBackendAddress] = useState(backendAddress)
   
+  const handleChangeEmail = (event) => {
+    setFormEmail(event.target.value);
+  }
 
   const handleChangePassword = (event) => {
     setFormPassword(event.target.value);
@@ -23,20 +30,24 @@ function ResetPassword(props) {
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    var email = formEmail;
     var password = formPassword;
     var password2 = formPassword2;
 
     if (password.length >= 5 && password === password2) {
 
       fetch(
-        "http://localhost:8080/reset-password",
+
+        currentBackendAddress + '/reset-password',
         {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded"
           },
           body:
-            "password=" +
+            "email=" +
+            email.trim() +
+            "&password=" +
             password.trim() +
             "&token=" +
             token
@@ -57,7 +68,7 @@ function ResetPassword(props) {
   }
 
   useEffect(() => {
-
+    setCurrentBackendAddress(localStorage.getItem("backurl") || backendAddress);
     const resultUsername = localStorage.getItem("username");
     const resultPassword = localStorage.getItem("password");
     if (
@@ -137,6 +148,16 @@ function ResetPassword(props) {
             Forgot Password
           </p>
           <Form onSubmit={handleSubmit}>
+          <Form.Group controlId="loginFormEmail">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                value={formEmail}
+                placeholder="Email"
+                onChange={handleChangeEmail}
+              />
+            </Form.Group>
+
             <Form.Group controlId="loginFormPassword">
               <Form.Label>Password</Form.Label>
               <Form.Control

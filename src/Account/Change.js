@@ -7,6 +7,7 @@ import Button from "react-bootstrap/Button";
 
 import Form from "react-bootstrap/Form";
 
+import { backendAddress } from "./../config/default-variables.js"
 
 
 const PASSWORD = "password";
@@ -20,6 +21,7 @@ function Login(props) {
   const [formCurrentPassword, setFormCurrentPassword] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [formPassword2, setFormPassword2] = useState("");
+  const [currentBackendAddress, setCurrentBackendAddress] = useState(backendAddress)
 
 
 
@@ -47,7 +49,7 @@ function Login(props) {
       if (password.length >= 5 && password === password2) {
 
         fetch(
-          "http://localhost:8080/change-password",
+          currentBackendAddress + '/change-password',
           {
             method: "POST",
             headers: {
@@ -82,6 +84,7 @@ function Login(props) {
   }
 
   useEffect(() => {
+    setCurrentBackendAddress(localStorage.getItem("backurl") || backendAddress);
     const resultUsername = localStorage.getItem("username");
     const resultPassword = localStorage.getItem("password");
     if (

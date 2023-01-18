@@ -8,8 +8,11 @@ import Form from "react-bootstrap/Form";
 
 import { Link } from "react-router-dom";
 
+import { backendAddress } from "./../config/default-variables.js"
+
 const USERNAME = "username";
 const PASSWORD = "password";
+const BACKURL = "backurl";
 
 function Register(props) {
 
@@ -20,6 +23,7 @@ function Register(props) {
   const [formPassword2, setFormPassword2] = useState(""); 
   const [formEmail, setFormEmail] = useState(""); 
   const [errorMessage, setErrorMessage] = useState(""); 
+  const [currentBackendAddress, setCurrentBackendAddress] = useState(backendAddress)
 
   const handleChangeFirstName = (event) => {
     setFormFirstName(event.target.value );
@@ -65,7 +69,7 @@ function Register(props) {
 
 
     fetch(
-      "http://localhost:8080/add-user",
+      currentBackendAddress + '/add-user',
       {
         method: "POST",
         headers: {
@@ -107,6 +111,7 @@ function Register(props) {
   // check if user credentials are already saved,
   // in that case save it in redux and send him to profile PAGE
   useEffect(() => {
+    setCurrentBackendAddress(localStorage.getItem("backurl") || backendAddress);
     const resultUsername = localStorage.getItem("username");
     const resultPassword = localStorage.getItem("password");
     if (

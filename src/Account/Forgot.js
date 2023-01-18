@@ -5,10 +5,13 @@ import Button from "react-bootstrap/Button";
 
 import Form from "react-bootstrap/Form";
 
+import { backendAddress } from "./../config/default-variables.js"
+
 function Forgot(props) {
 
   const [errorServerMessage, setErrorServerMessage] = useState("");
   const [formEmail, setFormEmail] = useState("");
+  const [currentBackendAddress, setCurrentBackendAddress] = useState(backendAddress)
 
   const handleChangeEmail = (event) => {
     setFormEmail(event.target.value);
@@ -20,7 +23,7 @@ function Forgot(props) {
 
 
     fetch(
-      "http://localhost:8080/forgot-password",
+      currentBackendAddress + '/forgot-password',
       {
         method: "POST",
         headers: {
@@ -41,6 +44,7 @@ function Forgot(props) {
 
 
   useEffect(() => {
+    setCurrentBackendAddress(localStorage.getItem("backurl") || backendAddress);
     const resultUsername = localStorage.getItem("username");
     const resultPassword = localStorage.getItem("password");
     if (

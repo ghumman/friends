@@ -5,6 +5,8 @@ import Button from "react-bootstrap/Button";
 
 import Form from "react-bootstrap/Form";
 
+import { backendAddress } from "./../config/default-variables.js"
+
 const USERNAME = "username";
 const PASSWORD = "password";
 const LOGIN_TYPE = "login_type";
@@ -18,6 +20,7 @@ function Profile(props) {
   const [errorServerMessage, setErrorServerMessage] = useState("");
   const [friends, setFriends] = useState([]);
   const [friendMessages, setFriendMessages] = useState([]);
+  const [currentBackendAddress, setCurrentBackendAddress] = useState(localStorage.getItem("backurl"));
 
 
   const handleChangeToEmail = (event) => {
@@ -32,7 +35,7 @@ function Profile(props) {
     event.preventDefault();
 
     fetch(
-      "http://localhost:8080/send-message",
+      currentBackendAddress + '/send-message',
       {
         method: "POST",
         headers: {
@@ -58,6 +61,7 @@ function Profile(props) {
 
 
   useEffect(() => {
+    setCurrentBackendAddress(localStorage.getItem("backurl") || backendAddress);
     if (props.authenticate.user.trim() === "") {
       props.history.push({
         pathname: "/"
@@ -67,8 +71,9 @@ function Profile(props) {
   }, [])
 
   const getFriends = () => {
+    console.log('currentBackendAddress: ' + currentBackendAddress);
     fetch(
-      "http://localhost:8080/all-friends",
+      currentBackendAddress + '/all-friends',
       {
         method: "POST",
         headers: {
@@ -111,7 +116,7 @@ function Profile(props) {
 
   const showFriendMessages = (friendEmail) => {
     fetch(
-      "http://localhost:8080/messages-user-and-friend",
+      currentBackendAddress + '/messages-user-and-friend',
       {
         method: "POST",
         headers: {
@@ -220,6 +225,7 @@ function Profile(props) {
         {changePassword}
 
         <p>Friends</p>
+        Current Backend Address: {currentBackendAddress}
         <p>Hi {localStorage.getItem(USERNAME)}</p>
 
         <p
