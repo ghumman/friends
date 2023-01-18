@@ -14,15 +14,6 @@ cd backend
 ```
 Use Postman to test the application which is running on `localhost:8080`. 
 
-## If you want to run React application only
-Run following
-```
-cd frontend-react
-# If no node_modules presend
-yarn install
-yarn start
-```
-
 ## Running this compose project
 In order to run the compose project, run following command.
 ``` 
