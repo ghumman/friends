@@ -137,6 +137,10 @@ git remote set-url origin git@github.com:ghumman/friends.git
 
 Go to your github repo settings and then to `Pages`. Select `Source` as `Deploy from a branch`, `Branch` as `gh-pages`, `Folder` as `/root`. Then save it. You can check the deployment status inside `Actions`.
 
+### Notes
+
+- This branch is only used to host web app on github pages. Use the branch `react-js-docker-hub` to push docker image to docker hub. This is because this repo has `homepage` pointing to github pages insdie `package.json`. 
+
 ---------------------------------------------------------------------------------
 Automatically Generated Documentation
 ---------------------------------------------------------------------------------
