@@ -1,6 +1,0 @@
-services:
-    backend:
-      image: java-backend
-      build: backend/.
-      ports:
-        - 8080:8080

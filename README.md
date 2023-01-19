@@ -9,23 +9,26 @@ There are some feature changes in this repo compared to other java projects with
 ## If you want to run Java application only
 Run following
 ```
-cd backend
 ./mvnw spring-boot:run
 ```
 Use Postman to test the application which is running on `localhost:8080`. 
 
-## Running this compose project
-In order to run the compose project, run following command.
-``` 
-docker compose up -d 
-``` 
-`-d` is to run everything in background<br/> 
- 
-In order to destroy everything, use following command.<br/> 
-``` 
-docker compose down 
-``` 
-If you want to remove the volumes, you will need to add the --volumes flag<br/> 
+## Creating Docker Image
+
+If you want to create docker image, run:
+```
+docker build -t ghumman/java-backend:latest .
+```
+
+If you want to run that image locally:
+```
+docker run -p 8080:8080 ghumman/java-backend:latest
+```
+
+If you want to push this docker image to docker hub:
+```
+docker push ghumman/java-backend:latest
+```
 
 
 # Following documentation is from project java spring boot branch
