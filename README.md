@@ -1,84 +1,37 @@
-# About 
-This repo is for Java + Spring Boot + Mysql + Docker Images<br/>
-There are some feature changes in this repo compared to other java projects without docker. They are mainly following.<br/>
-- No email is sent in this repo.
-- Sending email is removed when creating an account.
-- Sending email is removed when using feature: forgot-password.
-- You can just change the password when using reset-password without sending `token`. Just need to send email and password.
+# About
 
-## If you want to run Java application only
-Run following
-```
-./mvnw spring-boot:run
-```
-Use Postman to test the application which is running on `localhost:8080`. 
+This branch shares experience of using AWS ECS Elastic Container Service for hosting docker images. For setting up aws credentials and associating them with docker, creating and uploading docker image to public and private ECR Elastic Container Registry, use `README` from branch `aws-lambda-docker`. 
 
-## Creating Docker Image
-
-If you want to create docker image, run:
+In order to setup Java Docker Container on ECS, I used following guide. And it works really good. 
 ```
-docker build -t ghumman/java-backend:latest .
+https://mydeveloperplanet.com/2021/09/07/how-to-deploy-a-spring-boot-app-on-aws-ecs-cluster/
 ```
 
-If you want to run that image locally:
+I tried multiple things and guide but it was not working initially, and the thing I was donig wrong was that when creating the cluster, under networking, I was not selecting all the subnets in a vpc and that's why the whole process used to go smooth but I was not able to hit the endpoints. For other branches I was creating the docker image by running something like `docker build -t ghumman/java-backend .`. And then after that I was testing the image locally and pushing it the repositories. That should work too but following the above guide. I added following code to the `pom.xml`. 
 ```
-docker run -p 8080:8080 ghumman/java-backend:latest
+<plugin>
+    <groupId>com.spotify</groupId>
+    <artifactId>dockerfile-maven-plugin</artifactId>
+    <version>1.4.12</version>
+    <executions>
+        <execution>
+            <id>default</id>
+            <goals>
+                <goal>build</goal>
+                <goal>push</goal>
+            </goals>
+        </execution>
+    </executions>
+
+    <configuration>
+        <repository>ghumman/java-backend</repository>
+        <tag>${project.version}</tag>
+        <buildArgs>
+            <JAR_FILE>target/message-0.0.1-SNAPSHOT.jar</JAR_FILE>
+        </buildArgs>
+    </configuration>
+</plugin>
+
 ```
 
-If you want to push this docker image to docker hub:
-```
-docker push ghumman/java-backend:latest
-```
-
-
-# Following documentation is from project java spring boot branch
-
-This branch contains java spring boot back end application
-### Push code using following command
-git push origin java-spring-boot
-### In order to allow less secure apps to send emails using gmail use following link
-https://myaccount.google.com/lesssecureapps
-
-### Starting on a new Computer
-1. Make sure your VS Code has following extentions
-- Java Extenstion Pack
-- Spring Boot Extenstion Pack
-- Lombok Annotations Support for VS Code
-
-2. Used following guide to install Java and setup java_home
-- [Install Java](https://linuxhint.com/install_jdk_14_ubuntu/)
-
-3. Used following guide to install mysql locally and create database named "friends_mysql" and create user ghumman with password ghumman
-- [Install Mysql Locally](https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-20-04)
-
-4. Based on your JAVA installed version update pom.xml at the following line
-```
-<java.version>14</java.version>
-```
-
-### Notes
-- In order go get 200 response when calling endpoints like add-user and others you need to provide gmail or other email provider username and password in application.properties file and inside application.properties in JavaMailSender method. Otherwise you'll be getting Internal Server Error as endpoints try to send emails to newly created user emails. 
-
-- To check if swagger is working use following url 
-```
-http://localhost:8080/v2/api-docs
-```
-
-- To use swagger ui use following url
-```
-http://localhost:8080/swagger-ui/
-```
-
-- In order to run the application using command line. 
-```
-cd friends/message
-./mvnw spring-boot:run
-```
-- In order to run it on VS Code, which is ready and have the prerequisites, just go to Run and Debug and run the 
-Start Debugger.<br/>
-
-- In order to create jar file/files.
-```
-cd message
-./mvnw package
-```
+And then run `mvn clean verify`. This will automatically create docker image named `ghumman/java-backend` for you. And then use the same procedure mentioned in the README of branch `aws-lambda-docker` to upload it to ECR. 
