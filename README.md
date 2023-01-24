@@ -1,6 +1,9 @@
 # About
 
-This branch explains the steps to host a docker image to AWS ECR - Elastic Container Registry. Also how to setup lambda function to use that ECR image. 
+This branch talks about the experiences I had trying to host Java Docker Image to AWS Lambda. According to my experiences it is not that stright forward. As Lambda requires to have a specific Dockerfile syntax and you need to wrap up your Spring Boot Application in a lambda friendly manner. I tried multiple way so far but I couldn't make the friends applicaiton work on lambda so far. One approach which looks promising is that take an example project which has Spring Boot Docker Application ready to be launched on lambda and try to put your application code in it.  
+
+
+This README also explains in the detail how to setup aws cli for pushing images to both private and public ECR repositories. 
 
 ## Pre-requisites
 
@@ -16,7 +19,7 @@ https://docs.aws.amazon.com/lambda/latest/dg/images-create.html
 https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-images.html
 
 ## Creating ECR repository
-Go to ECR on AWS and create new repository or you can use command line to create new repository. Public repos within limits do not cost anything. 
+Go to ECR on AWS and create new repository or you can use command line to create new repository. Public repos within limits do not cost anything. But currently lambdas do not allow using public ecr repositories, so you need to create private repo. 
 
 You can have either public repository or private repository. Following are the complete guides.
 
@@ -72,7 +75,7 @@ docker push 123456789012.dkr.ecr.us-east-1.amazonaws.com/java-backend:latest
 
 One time setup to authenticate docker to public ecr account. 
 ```
-aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+aws ecr-public get-login-password --region us-east-1 --profile personal-ghummantech | docker login --username AWS --password-stdin public.ecr.aws
 ```
 
 Tag the local repo. Currenly I have `m6a5y9u9` as username. I requested `ghumman` which is in review. 

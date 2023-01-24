@@ -1,0 +1,15 @@
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/User/PasswordUtils.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/User/UserRepository.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/Message/MessagesAll.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/User/UserController.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/SpringFoxConfig.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/StreamLambdaHandler.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/MessageApplication.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/Message/MessageResponse.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/SQLDialect.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/Message/MessageRepository.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/Message/MessageController.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/User/UserResponse.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/Message/Message.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/User/UsersAll.java
+/home/ghumman/programming/friends/aws-lambda-docker/src/main/java/com/friends/message/User/User.java
