@@ -41,6 +41,14 @@ Friends is a collection of fullstack projects created in different programming l
 #### Vue
 - [Vue.js with Vite](https://github.com/ghumman/friends/tree/vue-js).
 
+### Github Actions
+
+Following branches have actions in it. 
+
+- Branch: `java-sqllite-docker` Workflow: `java-app-docker-image.yml`
+- Branch: `react-js-docker-hub` Workflow: `react-app-docker-image.yml`
+- Branch: `gh-pages`
+
 ## Features
 Following are the main features which are provided in every project and can also be found here [FEATURES](https://github.com/ghumman/friends/blob/project-documentation/features.txt).
 
