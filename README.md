@@ -14,3 +14,10 @@ go run *.go
 or 
 Figure out how to run go install
 ```
+
+## Setup on new computer
+```
+go mod init friends
+go mod tidy
+go mod *.go
+```
