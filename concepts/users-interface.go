@@ -59,7 +59,7 @@ func (s *InMemoryStorage) UpdateUser(id int, user User) error {
 		return fmt.Errorf("user id mismatch")
 	}
 	_, exists := s.users[id]
-	if (!exists) {
+	if !exists {
 		return fmt.Errorf("user does not exist")
 	}
 	s.users[id] = user
@@ -68,7 +68,7 @@ func (s *InMemoryStorage) UpdateUser(id int, user User) error {
 
 func (s *InMemoryStorage) DeleteUser(id int) error {
 	_, exists := s.users[id]
-	if (!exists) {
+	if !exists {
 		return fmt.Errorf("user does not exists")
 	}
 	delete(s.users, id)
@@ -82,17 +82,38 @@ func main() {
 	service := UserService{userStorage: s}
 
 	userInput := User{id: 1, name: "John", email: "john@example.com"}
-	service.CreateUser(userInput)
+	err := service.CreateUser(userInput)
+	if err == nil {
+		fmt.Println("User got created successfully")
+	} else {
+		fmt.Println("Error occured while creating user", err)
+	}
+
 	userOutput, err := service.GetUser(userInput.id)
 	if err != nil {
 		fmt.Println("Error getting users:", err)
 		return
 	}
-	fmt.Println("user received back: " , userOutput.name)
+	fmt.Printf("user received back, ID: %d, Name: %s, Email: %s\n", userOutput.id, userOutput.name, userOutput.email)
 
 	newUserInput:= User{id: 1, name: "Smith", email: "smith@example.com"}
 
-	service.UpdateUser(1, newUserInput);
+	err = service.UpdateUser(1, newUserInput)
+	if err != nil {
+		fmt.Println("Error updating user, error: ", err)
+	}
 
-	service.DeleteUser(1);
+	userOutput, err = service.GetUser(newUserInput.id)
+		if err != nil {
+		fmt.Println("Error getting users:", err)
+		return
+	}
+	fmt.Printf("user received back after updating, ID: %d, Name: %s, Email: %s\n", userOutput.id, userOutput.name, userOutput.email)
+ 
+
+
+	err = service.DeleteUser(1)
+	if err != nil {
+		fmt.Println("Unable to delete user")
+	}
 }

@@ -19,5 +19,5 @@ Figure out how to run go install
 ```
 go mod init friends
 go mod tidy
-go mod *.go
+go run *.go
 ```
