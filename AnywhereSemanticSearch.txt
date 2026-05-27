@@ -1,0 +1,25 @@
+While working on a multi-tentant SAAS project, 
+I lead the integration of semantic searches to their existing property leads search engine. 
+
+Anywhere is the parent company of brands like: 
+1) Coldwell Banker
+2) Century 21
+3) Sotheby's
+4) Better Homes & Gardens. 
+
+These were different tenants in our application, where real estate agents would sign up and do 
+semantic searches like: 
+1) Show me homes in quiet neighborhood in a particular zip code. 
+2) Homes with great school ratings within particular price range. 
+
+We had the leads in postgress SQL database with information about zip codes, price ranges, metadata. 
+We enabled pg-vectors to create vector embeddings for the metadata. 
+
+I took a hybrid approach combining both BM-25 and semantic searches to find the results and feed it to
+the LLM for final user response. 
+
+I was responsible for setting up websockets to stream the semantic search results to the user. 
+
+I set guardrails and made sure that LLM is not halucinating. 
+
+I used Langchain to create open-ai embeddings and for searching the leads. 
