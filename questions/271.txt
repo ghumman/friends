@@ -1,0 +1,35 @@
+LeetCode 271 — Encode and Decode Strings is usually stated like this:
+
+🧩 Problem: Encode and Decode Strings
+
+Design an algorithm to encode a list of strings to a single string. The encoded string is then sent over the network and decoded back to the original list of strings.
+
+Implement the following methods:
+
+Required functions
+1. encode(strs []string) string
+
+Encodes a list of strings into a single string.
+
+2. decode(s string) []string
+
+Decodes a single string back into the original list of strings.
+
+🧪 Example
+Input
+strs = ["hello", "world"]
+Output (after encode → decode)
+["hello", "world"]
+⚠️ Important constraint
+
+You cannot rely on simple delimiters like # or , because:
+
+["a#b", "c"]
+
+would break naive splitting.
+
+So your encoding must be lossless and unambiguous, even if strings contain any characters.
+
+💡 Follow-up (core challenge)
+Can you design an encoding that works for any characters (including #, |, empty strings)?
+Can both encode and decode run in O(total characters)?
