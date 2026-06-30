@@ -1,0 +1,110 @@
+Amazon Security Sr SDE Interview Prep Materials
+Inbox
+
+Zigelman, Arielle <azigelma@amazon.jobs>
+Jun 19, 2026, 11:49 AM (10 days ago)
+to me
+
+Your attachments are now available for secure download. Amazon has replaced the attachments in this email with download links.
+Important: These links may contain content that is confidential. Please exercise appropriate caution when sharing.
+2 Attachments Download all Passcode required ENxDzZ
+Leadership Principle Worksheet and Exercise.xlsx STAR Method & Amazon's Leadership Principles.pdf
+Attachments Available Until: July 19, 2026, 16:49 (UTC+00:00)
+Help us improve: Share Your Feedback Visit Here for FAQs and support resources.
+Hi Ahmed,
+
+ 
+
+The phone screen will be a 1-hour session where you meet with one engineer – you will be sent a live coding link where you will complete a Problem Solving coding challenge similar to advanced problems found on HackerRank or LeetCode in addition to asking questions around our Leadership Principles “Invent & Simplify” & “Ownership”.   
+
+·         First 5 minutes – Introduce yourself and build rapport
+
+·         Next 40-45 minutes - Technical Questions (Will be similar to a medium level Leet Code question), and your experience designing and scaling systems.
+
+·   I cannot stress this next sentence enough – Please, please, please ask questions before you starting doing anything related to coding/systems design. Ask clarifying questions (examples below):
+
+·   A couple of examples of coding questions could be:
+
+·         Write a program that allows the user to calculate the price of a pizza (factors include base, size and toppings)
+
+·         How do you add deals to the offer?
+
+·         How do you add an order class?
+
+·         What about discounts?
+
+·   Given a phone with classical telephone keypad made of numbers from 0 to 9 which also have letters on it (1=abc, 2=def, 3=ghi, 4=jkl, 5=mno, 6=pqr, 7=stu, 8=vwx, 9=yz, 0=space).
+
+·         Write a program in your favorite programming language that allows to create memos or any free text messages.
+
+·   When you get the system design technical question please make sure to ask what the functional requirements of the problem are or what the customer experience of the problem is!
+
+·         For example “Design a system for storing and searching server logs for all of Amazon”
+
+·         Who are the customers?
+
+·         What is the problem the customers are having?
+
+·         What is the volume of logs?
+
+·         Should you tier the logs?
+
+·         Last 10 minutes – are reserved for you to ask questions (time permitting) so have a few ready.
+
+  
+
+Technical Competencies Assessed
+
+Your code will be evaluated on 3 areas:
+
+1. Problem solving – Were you able to solve the problem correctly? Did you come up with the Optimal Solution (No Brute Force)
+
+2. Logical and Maintainable – Is you code Logical and Maintainable? Is it Extensible? Could another engineer come in a read your code without you being present
+
+3. Coding Data Structures & Algorithms- You will be given a technical problem designed to see if you can apply various data structures & algorithms; makes good trade-offs; and can combine data structures to solve complex use cases (that scale with level).
+
+4. Production Ready - How Close to Production Ready is the Code? You should aim for no errors
+
+ 
+
+Amazon Interview Coding Example (External Website Link)
+
+HackerRank
+
+Coding interview prep website. You should be able to complete easy questions in about 5 minutes and medium level questions in about 30 minutes. Until you are able to complete questions at this pace, keep reading up and watching videos.
+
+ 
+
+Why Amazon?
+
+Spend some time thinking about what excites you about Amazon Security and the work this team is doing. Have some questions ready for your interviewer to learn more about the team, projects, and products.  
+
+Speak in “Me” versus “We”
+
+It is best to discuss your experience in terms of your *personal* contributions and skills versus those of your past teams. This will give the interviewer insight into your personal experience versus those of your peers.
+
+Do not be afraid to tell a story
+
+We want to understand how you think, so explain your thought process and decision making throughout the interview. Remember, the interviewer is not only evaluating your technical abilities, but also how you approach problems and how you try to solve them. Explicitly state and check assumptions with your interviewer as you solve a problem to ensure they are reasonable. Clear and concise communication is important but being too brief will not enable the interviewer to get a clear picture of your experiences. Good luck!
+
+ 
+
+Job Requisite you are interviewing for: https://amazon.jobs/en/jobs/10424362/senior-software-development-engineer-engagement-security
+
+ 
+
+Best,
+
+ 
+
+Arielle Zigelman
+
+Technical Recruiter
+
+Amazon Security  
+
+azigelma@amazon.jobs  
+
+Privacy Questions? Please see our CA Privacy Notice.
+
+ 
