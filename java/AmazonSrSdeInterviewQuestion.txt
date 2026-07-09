@@ -1,0 +1,98 @@
+
+// Question
+Compare directories rooted at two different paths.
+If all subdirectories and files are equal, return True.
+Otherwise return false.
+
+# Available functions
+bool is_file(path: str)
+bool file_contents_equal(path1: str, path2: str)
+list[str] directory_contents(path: str)
+
+def directories_equal(path1: str, path2: str) -> bool:
+    return false
+
+
+
+// Solution
+import java.util.*;
+
+public class DirectoryComparator {
+
+    // Mocking the provided API signatures for compilation/reference
+    // Replace these or adapt to the exact environment interfaces provided
+    interface FileSystemAPI {
+        boolean isFile(String path);
+        boolean fileContentsEqual(String path1, String path2);
+        List<String> directoryContents(String path);
+    }
+
+    private final FileSystemAPI api;
+
+    public DirectoryComparator(FileSystemAPI api) {
+        this.api = api;
+    }
+
+    public boolean directoriesEqual(String path1, String path2) {
+        boolean isFile1 = api.isFile(path1);
+        boolean isFile2 = api.isFile(path2);
+
+        // 1. Base Case: Structural mismatch (one is a file, the other is a directory)
+        if (isFile1 != isFile2) {
+            return false;
+        }
+
+        // 2. Base Case: Both are files, compare contents directly
+        if (isFile1) {
+            return api.fileContentsEqual(path1, path2);
+        }
+
+        // 3. Both are directories: Compare contents structurally and recursively
+        List<String> contents1 = api.directoryContents(path1);
+        List<String> contents2 = api.directoryContents(path2);
+
+        if (contents1 == null || contents2 == null) {
+            return contents1 == contents2;
+        }
+
+        if (contents1.size() != contents2.size()) {
+            return false;
+        }
+
+        // Map names to absolute paths for comparison
+        Map<String, String> map1 = buildNameMap(contents1);
+        Map<String, String> map2 = buildNameMap(contents2);
+
+        // Structural check: Ensure both directories contain identical sub-resource names
+        if (!map1.keySet().equals(map2.keySet())) {
+            return false;
+        }
+
+        // Recurse into matching pairs
+        for (String name : map1.keySet()) {
+            String nextPath1 = map1.get(name);
+            String nextPath2 = map2.get(name);
+            
+            if (!directoriesEqual(nextPath1, nextPath2)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private Map<String, String> buildNameMap(List<String> paths) {
+        Map<String, String> map = new HashMap<>();
+        for (String path : paths) {
+            String name = getResourceName(path);
+            map.put(name, path);
+        }
+        return map;
+    }
+
+    private String getResourceName(String path) {
+        if (path == null || path.isEmpty()) return "";
+        String[] parts = path.split("/");
+        return parts[parts.length - 1];
+    }
+}
