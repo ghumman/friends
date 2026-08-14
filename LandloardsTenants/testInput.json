@@ -1,0 +1,30 @@
+{
+  "applications": [
+    {
+      "applicationId": "123",
+      "firstName": "Rachel",
+      "lastName": "Renter",
+      "email": "rachelrenter@zillow.com",
+      "phoneNumber": "999-123-4567",
+      "userId": "abc",
+      "creditScore": 700
+    }
+  ],
+  "incomeSources": [
+    {
+      "title": "Engineer",
+      "employer": "Zillow",
+      "grossIncome": 4000.00,
+      "netIncome": 3000.00,
+      "startDate": "Feb 1, 2022, 12:00:00 AM",
+      "userId": "abc",
+      "periodType": "Monthly"
+    }
+  ],
+  "landlordRequirements": {
+    "monthlyRent": 1000,
+    "minimumIncomeToRentRatio": 2,
+    "minimumCreditScore": 500
+  }
+}
+
